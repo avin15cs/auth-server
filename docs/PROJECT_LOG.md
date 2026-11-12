@@ -10,6 +10,7 @@ This log records completed architectural milestones. Planned work remains in
 | Standalone authorization server foundation | `740cf19` | Completed | Spring Authorization Server, Google login, Authorization Code with PKCE, refresh-token rotation, PostgreSQL persistence, Flyway, JDBC sessions, external JWK configuration, Docker and CI. |
 | Client Credentials support | `e2b099e` | Completed | Confidential machine client, explicit scopes and audience, `subject_type=client`, token-endpoint integration coverage. |
 | Audience-scoped administration foundation | `6ecc0d5` | Completed | `AUTH_ADMIN` bootstrap, audience-specific roles, audited role changes, protected management API, immediate role-revocation enforcement. |
+| Managed OAuth client lifecycle | Current development | Completed | Session and CSRF contract, paginated client management, generated one-time secrets, persisted audiences and enabled state, protocol-level disablement, audit events, and PostgreSQL lifecycle integration tests. |
 | Documentation baseline | Current development | Completed | Repository instructions, architecture, developer guide, admin UI contract, CI/CD guide, operations, roadmap, and engineering log aligned. |
 
 ## Architectural decisions
@@ -56,12 +57,16 @@ backend.
 - Audience-scoped role persistence and token claims.
 - Protected user listing and role replacement under `/api/admin/users`.
 - Audited bootstrap and administrator role changes.
+- Authenticated session and CSRF discovery under `/api/session`.
+- Protected dynamic client registration, safe inspection, update, enable, and disable under
+  `/api/admin/clients`.
+- Generated confidential-client secrets that are returned once and stored only as password
+  hashes.
+- Persisted client audience and enabled metadata used by token customization and protocol
+  endpoint lookup.
 
 ## Known planned work
 
-- Dynamic client-management API and validation.
-- One-time generated client secrets and lifecycle management.
-- Complete admin session and CSRF API contract.
 - Auth administration frontend.
 - Secret rotation and emergency revocation.
 - Rate limits, audit export, alerting, and production delivery automation.

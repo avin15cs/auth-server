@@ -9,11 +9,11 @@ admin frontend acceptance criteria are maintained in `ADMIN_UI_REQUIREMENTS.md`.
 - [x] `AUTH-001` Audience-scoped roles and administrator bootstrap -- persist roles,
   emit only roles for the access-token audience, protect management APIs, prevent
   administrator self-lockout, and audit role changes.
-- [ ] `AUTH-002` Client-management API -- allow `AUTH_ADMIN` users to create, inspect,
+- [x] `AUTH-002` Client-management API -- allow `AUTH_ADMIN` users to create, inspect,
   disable, and update Authorization Code and Client Credentials registrations with
   strict redirect URI, grant, scope, and audience validation. Return a generated client
   secret once and store only its password hash.
-- [ ] `AUTH-003` Client lifecycle integration tests -- prove registration, token issuance,
+- [x] `AUTH-003` Client lifecycle integration tests -- prove registration, token issuance,
   disablement, redirect validation, scope enforcement, and audit behavior against real
   PostgreSQL.
 

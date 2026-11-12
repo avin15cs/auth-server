@@ -1,5 +1,8 @@
 package io.github.avin15cs.authserver.config;
 
+import io.github.avin15cs.authserver.client.ClientMetadataRepository;
+import io.github.avin15cs.authserver.client.EnabledRegisteredClientRepository;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -14,8 +17,16 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 public class OAuthPersistenceConfig {
 
     @Bean
-    RegisteredClientRepository registeredClientRepository(JdbcOperations jdbc) {
+    JdbcRegisteredClientRepository jdbcRegisteredClientRepository(JdbcOperations jdbc) {
         return new JdbcRegisteredClientRepository(jdbc);
+    }
+
+    @Bean
+    @Primary
+    RegisteredClientRepository registeredClientRepository(
+            JdbcRegisteredClientRepository delegate,
+            ClientMetadataRepository metadata) {
+        return new EnabledRegisteredClientRepository(delegate, metadata);
     }
 
     @Bean
@@ -32,4 +43,3 @@ public class OAuthPersistenceConfig {
         return new JdbcOAuth2AuthorizationConsentService(jdbc, clients);
     }
 }
-

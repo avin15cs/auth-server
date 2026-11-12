@@ -10,9 +10,9 @@ class AuthServerPropertiesTest {
     @Test
     void normalizesMissingClientList() {
         AuthServerProperties properties = new AuthServerProperties(
-                "https://auth.example.com", "jwk-set", Duration.ofMinutes(10), Duration.ofHours(8), null);
+                "https://auth.example.com", "jwk-set", Duration.ofMinutes(10), Duration.ofHours(8), null, null);
 
         assertThat(properties.clients()).isEmpty();
+        assertThat(properties.admin().bootstrapEmails()).isEmpty();
     }
 }
-

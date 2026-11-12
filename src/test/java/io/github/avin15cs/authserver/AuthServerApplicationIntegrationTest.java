@@ -1,6 +1,12 @@
 package io.github.avin15cs.authserver;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
@@ -13,13 +19,21 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
+import io.github.avin15cs.authserver.user.AuthUser;
+import io.github.avin15cs.authserver.user.AuthUserRepository;
+import io.github.avin15cs.authserver.user.AuthUserRoleRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -70,6 +84,24 @@ class AuthServerApplicationIntegrationTest {
     @Autowired
     JdbcOperations jdbc;
 
+    @Autowired
+    WebApplicationContext applicationContext;
+
+    @Autowired
+    AuthUserRepository users;
+
+    @Autowired
+    AuthUserRoleRepository roles;
+
+    MockMvc mockMvc;
+
+    @BeforeEach
+    void configureMockMvc() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(applicationContext)
+                .apply(springSecurity())
+                .build();
+    }
+
     @Test
     void startsWithMigratedPersistentStoresAndBootstrappedClient() {
         Integer usersTable = jdbc.queryForObject(
@@ -78,9 +110,73 @@ class AuthServerApplicationIntegrationTest {
         Integer clients = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM oauth2_registered_client",
                 Integer.class);
+        Integer roleTables = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'auth_user_role'",
+                Integer.class);
 
         assertThat(usersTable).isOne();
         assertThat(clients).isEqualTo(2);
+        assertThat(roleTables).isOne();
+    }
+
+    @Test
+    void protectsManagementApiAndPersistsAuditedBootstrapRole() throws Exception {
+        mockMvc.perform(get("/api/admin/users").with(oidcLogin()))
+                .andExpect(status().isForbidden());
+
+        AuthUser admin = users.upsertGoogleUser(
+                "admin-sub", "admin@example.com", true, "Admin", null);
+        assertThat(roles.grantBootstrapAdministrator(admin, java.util.List.of("ADMIN@example.com")))
+                .isTrue();
+        assertThat(roles.findRoles(admin.id(), AuthUserRoleRepository.AUTH_SERVER_AUDIENCE))
+                .containsExactly(AuthUserRoleRepository.AUTH_ADMIN_ROLE);
+
+        mockMvc.perform(get("/api/admin/users")
+                        .with(oidcLogin()
+                                .idToken(token -> token.subject("admin-sub"))))
+                .andExpect(status().isOk());
+
+        roles.replaceRoles(
+                admin.id(), AuthUserRoleRepository.AUTH_SERVER_AUDIENCE, java.util.Set.of(), admin.id());
+        mockMvc.perform(get("/api/admin/users")
+                        .with(oidcLogin()
+                                .idToken(token -> token.subject("admin-sub"))))
+                .andExpect(status().isForbidden());
+
+        Integer auditEvents = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM admin_audit_event WHERE action = 'BOOTSTRAP_ADMIN_GRANTED'",
+                Integer.class);
+        assertThat(auditEvents).isOne();
+    }
+
+    @Test
+    void administratorCanReplaceApplicationRolesButCannotRemoveOwnAdminRole() throws Exception {
+        AuthUser admin = users.upsertGoogleUser(
+                "role-admin-sub", "role-admin@example.com", true, "Role Admin", null);
+        AuthUser target = users.upsertGoogleUser(
+                "role-target-sub", "role-target@example.com", true, "Role Target", null);
+        roles.grantBootstrapAdministrator(admin, java.util.List.of("role-admin@example.com"));
+        var adminLogin = oidcLogin()
+                .idToken(token -> token.subject("role-admin-sub"));
+
+        mockMvc.perform(put("/api/admin/users/{userId}/roles/{audience}",
+                        target.id(), "url-shortener-api")
+                        .with(adminLogin)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roles\":[\"URL_ADMIN\"]}"))
+                .andExpect(status().isNoContent());
+
+        assertThat(roles.findRoles(target.id(), "url-shortener-api"))
+                .containsExactly("URL_ADMIN");
+
+        mockMvc.perform(put("/api/admin/users/{userId}/roles/{audience}",
+                        admin.id(), AuthUserRoleRepository.AUTH_SERVER_AUDIENCE)
+                        .with(adminLogin)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roles\":[]}"))
+                .andExpect(status().isConflict());
     }
 
     @Test

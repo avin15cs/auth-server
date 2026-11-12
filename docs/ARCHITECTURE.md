@@ -19,6 +19,24 @@ Browser -> Client application -> Auth Server -> Google
 - Each application has a distinct client ID, redirect URI allowlist, scopes, and secret.
 - Resource servers authorize using `iss`, signature, expiry, audience/client and scopes.
 - Machine identities receive `subject_type=client`; people receive `subject_type=user` and `uid`.
+- Human roles are scoped to a resource-server audience. `AUTH_ADMIN` governs the auth
+  control plane, while application roles such as `URL_ADMIN` are emitted only for that
+  application's audience.
+
+## Administration boundary
+
+The auth server owns the protected management API and its audit trail. A separately
+built admin frontend consumes that API through the auth-server origin; it never connects
+directly to the authorization database. Verified Google accounts listed in
+`AUTH_ADMIN_EMAILS` receive the bootstrap `AUTH_ADMIN` role at login. The allowlist is a
+break-glass bootstrap mechanism and should be reduced or removed after durable
+administrators are assigned.
+
+Role assignments are stored by `(user_id, audience, role)`. User access tokens include
+only roles matching that token's audience. Client Credentials tokens remain machine
+identities and never receive human roles or a `uid`. The management boundary checks the
+persisted `AUTH_ADMIN` assignment on every request so role revocation does not wait for a
+browser session to expire.
 
 ## Supported flows
 
@@ -36,4 +54,3 @@ Implicit and Resource Owner Password Credentials grants are intentionally unsupp
 deployments should inject it from a managed secret store. During rotation, publish both
 old and new public keys until every token signed by the old key has expired; use the new
 private key for signing. Never commit JWK material.
-

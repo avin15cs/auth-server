@@ -13,6 +13,12 @@ issued by this service.
 - PostgreSQL persistence for clients, grants, consents, and internal users.
 - External private JWK configuration with overlapping-key rotation support.
 - Exact redirect URI allowlists and one client registration per application.
+- Audience-scoped application roles and an audited administrator boundary.
+
+Set `AUTH_ADMIN_EMAILS` to a comma-separated list of verified Google emails that may
+bootstrap the first auth-server administrators. Remove entries after durable
+administrators have been assigned unless they are intentionally retained for
+break-glass access.
 
 ## Local development
 
@@ -30,7 +36,8 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local
 The issuer is `http://localhost:9000`. Discovery is available at
 `/.well-known/openid-configuration`.
 
-See [architecture](docs/ARCHITECTURE.md) and [operations](docs/OPERATIONS.md).
+See [architecture](docs/ARCHITECTURE.md), [operations](docs/OPERATIONS.md), and the
+[prioritized delivery roadmap](docs/ROADMAP.md).
 
 ## Client integration
 

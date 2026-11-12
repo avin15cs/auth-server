@@ -46,6 +46,8 @@ auth:
   jwk-set: ${AUTH_JWK_SET:}
   access-token-ttl: ${ACCESS_TOKEN_TTL:10m}
   refresh-token-ttl: ${REFRESH_TOKEN_TTL:8h}
+  admin:
+    bootstrap-emails: ${AUTH_ADMIN_EMAILS:}
   clients:
     - id: ${URL_SHORTENER_CLIENT_ID:url-shortener}
       enabled: true

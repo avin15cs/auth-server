@@ -1,8 +1,10 @@
 package io.github.avin15cs.authserver.config;
 
 import io.github.avin15cs.authserver.security.PersistingOidcUserService;
+import io.github.avin15cs.authserver.security.AuthAdminAuthorizationManager;
 import io.github.avin15cs.authserver.user.AuthUser;
 import io.github.avin15cs.authserver.user.AuthUserRepository;
+import io.github.avin15cs.authserver.user.AuthUserRoleRepository;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.context.annotation.Bean;
@@ -47,9 +49,11 @@ public class SecurityConfig {
     @Order(2)
     SecurityFilterChain applicationSecurityFilterChain(
             HttpSecurity http,
-            PersistingOidcUserService oidcUserService) throws Exception {
+            PersistingOidcUserService oidcUserService,
+            AuthAdminAuthorizationManager authAdminAuthorization) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
+                        .requestMatchers("/api/admin/**").access(authAdminAuthorization)
                         .anyRequest().authenticated())
                 .oauth2Login(login -> login.userInfoEndpoint(userInfo ->
                         userInfo.oidcUserService(oidcUserService)))
@@ -69,7 +73,8 @@ public class SecurityConfig {
     @Bean
     OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer(
             AuthUserRepository users,
-            AuthServerProperties properties) {
+            AuthServerProperties properties,
+            AuthUserRoleRepository roles) {
         return context -> {
             boolean idToken = OidcParameterNames.ID_TOKEN.equals(context.getTokenType().getValue());
             boolean accessToken = OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType());
@@ -106,6 +111,13 @@ public class SecurityConfig {
             if (context.getAuthorizedScopes().contains(OidcScopes.PROFILE)) {
                 claims.put("name", user.displayName());
                 claims.put("picture", user.pictureUrl());
+            }
+            if (accessToken) {
+                var assignedRoles = roles.findRoles(
+                        user.id(), audienceFor(properties, context.getRegisteredClient().getClientId()));
+                if (!assignedRoles.isEmpty()) {
+                    claims.put("roles", assignedRoles);
+                }
             }
             context.getClaims().claims(existing -> existing.putAll(claims));
         };

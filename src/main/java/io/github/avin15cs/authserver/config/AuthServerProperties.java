@@ -17,10 +17,18 @@ public record AuthServerProperties(
         @NotBlank String jwkSet,
         @NotNull Duration accessTokenTtl,
         @NotNull Duration refreshTokenTtl,
-        List<@Valid Client> clients) {
+        List<@Valid Client> clients,
+        @Valid Admin admin) {
 
     public AuthServerProperties {
         clients = clients == null ? new ArrayList<>() : List.copyOf(clients);
+        admin = admin == null ? new Admin(List.of()) : admin;
+    }
+
+    public record Admin(List<@NotBlank String> bootstrapEmails) {
+        public Admin {
+            bootstrapEmails = bootstrapEmails == null ? List.of() : List.copyOf(bootstrapEmails);
+        }
     }
 
     public record Client(

@@ -2,7 +2,8 @@ package io.github.avin15cs.authserver.user;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -54,6 +55,30 @@ public class AuthUserRepository {
                 """, ROW_MAPPER, provider, subject).stream().findFirst();
     }
 
+    public Optional<AuthUser> findById(UUID id) {
+        return jdbc.query("""
+                SELECT id, provider, provider_subject, email, email_verified,
+                       display_name, picture_url, created_at, last_login_at
+                FROM auth_user
+                WHERE id = ?
+                """, ROW_MAPPER, id).stream().findFirst();
+    }
+
+    public long count() {
+        Long count = jdbc.queryForObject("SELECT COUNT(*) FROM auth_user", Long.class);
+        return count == null ? 0 : count;
+    }
+
+    public List<AuthUser> findPage(int limit, int offset) {
+        return jdbc.query("""
+                SELECT id, provider, provider_subject, email, email_verified,
+                       display_name, picture_url, created_at, last_login_at
+                FROM auth_user
+                ORDER BY created_at DESC, id
+                LIMIT ? OFFSET ?
+                """, ROW_MAPPER, limit, offset);
+    }
+
     private static AuthUser mapUser(ResultSet rs, int rowNumber) throws SQLException {
         return new AuthUser(
                 rs.getObject("id", UUID.class),
@@ -63,8 +88,7 @@ public class AuthUserRepository {
                 rs.getBoolean("email_verified"),
                 rs.getString("display_name"),
                 rs.getString("picture_url"),
-                rs.getObject("created_at", Instant.class),
-                rs.getObject("last_login_at", Instant.class));
+                rs.getObject("created_at", OffsetDateTime.class).toInstant(),
+                rs.getObject("last_login_at", OffsetDateTime.class).toInstant());
     }
 }
-

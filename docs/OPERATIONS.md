@@ -29,6 +29,19 @@ http://localhost:9000/login/oauth2/code/google
 
 Only `openid`, `profile`, and `email` are requested.
 
+## Bootstrap administrator
+
+Set `AUTH_ADMIN_EMAILS` to one or more comma-separated, verified Google email addresses.
+At the next successful login, each matching account receives `AUTH_ADMIN` for the
+`auth-server` audience and the grant is written to `admin_audit_event`. The comparison is
+case-insensitive. Treat this setting as break-glass configuration: keep it in deployment
+configuration rather than source control and remove entries that should no longer regain
+administrator access on login.
+
+The management endpoints under `/api/admin/**` require the session authority
+`ROLE_AUTH_ADMIN`. Role changes replace the target user's role set for one audience and
+are audited. An administrator cannot remove their own `AUTH_ADMIN` role through the API.
+
 ## Health and rollout
 
 - Liveness: `/actuator/health/liveness`

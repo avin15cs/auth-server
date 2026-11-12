@@ -22,22 +22,30 @@ break-glass access.
 
 ## Local development
 
-Requirements: Java 21, Maven, Docker, a Google Web OAuth client, and a private JWK Set.
+Requirements: Java 21, Docker, a Google Web OAuth client, and a private JWK Set. Use the
+committed Maven wrapper; a system Maven installation is optional.
 
 ```bash
 docker compose up -d postgres
 cp .env.example .env
 # Generate a private JWK Set, then store the output in your local secret configuration:
-mvn -q exec:java -Dexec.mainClass=io.github.avin15cs.authserver.tools.JwkGenerator
+./mvnw -q exec:java -Dexec.mainClass=io.github.avin15cs.authserver.tools.JwkGenerator
 # Fill the remaining secrets and export the values.
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+./mvnw spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
 The issuer is `http://localhost:9000`. Discovery is available at
 `/.well-known/openid-configuration`.
 
-See [architecture](docs/ARCHITECTURE.md), [operations](docs/OPERATIONS.md), and the
-[prioritized delivery roadmap](docs/ROADMAP.md).
+Project documentation:
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Developer guide](docs/DEVELOPER_GUIDE.md)
+- [Admin UI requirements](docs/ADMIN_UI_REQUIREMENTS.md)
+- [CI/CD pipeline](docs/CI_CD_PIPELINE.md)
+- [Operations](docs/OPERATIONS.md)
+- [Prioritized roadmap](docs/ROADMAP.md)
+- [Engineering log](docs/PROJECT_LOG.md)
 
 ## Client integration
 

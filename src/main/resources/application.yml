@@ -48,6 +48,7 @@ auth:
   refresh-token-ttl: ${REFRESH_TOKEN_TTL:8h}
   clients:
     - id: ${URL_SHORTENER_CLIENT_ID:url-shortener}
+      enabled: true
       secret: ${URL_SHORTENER_CLIENT_SECRET:}
       name: URL Shortener
       redirect-uris:
@@ -55,6 +56,18 @@ auth:
       post-logout-redirect-uris:
         - ${URL_SHORTENER_POST_LOGOUT_URI:http://localhost:5173/}
       scopes: [openid, profile, email, urls.read, urls.write]
+      grant-types: [authorization_code, refresh_token]
+      audience: ${URL_SHORTENER_AUDIENCE:url-shortener-api}
+      public-client: false
+    - id: ${URL_SHORTENER_AUTOMATION_CLIENT_ID:url-shortener-automation}
+      enabled: ${URL_SHORTENER_AUTOMATION_ENABLED:false}
+      secret: ${URL_SHORTENER_AUTOMATION_CLIENT_SECRET:}
+      name: URL Shortener Automation
+      redirect-uris: []
+      post-logout-redirect-uris: []
+      scopes: [urls.read, urls.write]
+      grant-types: [client_credentials]
+      audience: ${URL_SHORTENER_AUDIENCE:url-shortener-api}
       public-client: false
 
 management:

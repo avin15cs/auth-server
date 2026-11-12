@@ -28,6 +28,7 @@ public class ClientBootstrap implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         properties.clients().stream()
+                .filter(AuthServerProperties.Client::enabled)
                 .filter(client -> clients.findByClientId(client.id()) == null)
                 .map(this::toRegisteredClient)
                 .forEach(clients::save);
@@ -37,10 +38,8 @@ public class ClientBootstrap implements ApplicationRunner {
         RegisteredClient.Builder builder = RegisteredClient.withId(UUID.randomUUID().toString())
                 .clientId(client.id())
                 .clientName(client.name())
-                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-                .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .clientSettings(ClientSettings.builder()
-                        .requireProofKey(true)
+                        .requireProofKey(client.grantTypes().contains("authorization_code"))
                         .requireAuthorizationConsent(false)
                         .build())
                 .tokenSettings(TokenSettings.builder()
@@ -48,6 +47,16 @@ public class ClientBootstrap implements ApplicationRunner {
                         .refreshTokenTimeToLive(properties.refreshTokenTtl())
                         .reuseRefreshTokens(false)
                         .build());
+
+        validateGrantCombination(client);
+        client.grantTypes().stream()
+                .map(this::toGrantType)
+                .forEach(builder::authorizationGrantType);
+
+        if (client.grantTypes().contains("authorization_code") && client.redirectUris().isEmpty()) {
+            throw new IllegalStateException(
+                    "Authorization Code client '" + client.id() + "' requires at least one redirect URI");
+        }
 
         if (client.publicClient()) {
             builder.clientAuthenticationMethod(ClientAuthenticationMethod.NONE);
@@ -63,6 +72,27 @@ public class ClientBootstrap implements ApplicationRunner {
         client.postLogoutRedirectUris().forEach(builder::postLogoutRedirectUri);
         client.scopes().forEach(builder::scope);
         return builder.build();
+    }
+
+    private void validateGrantCombination(AuthServerProperties.Client client) {
+        if (client.publicClient() && client.grantTypes().contains("client_credentials")) {
+            throw new IllegalStateException(
+                    "Client Credentials client '" + client.id() + "' must be confidential");
+        }
+        if (client.grantTypes().contains("refresh_token")
+                && !client.grantTypes().contains("authorization_code")) {
+            throw new IllegalStateException(
+                    "Refresh Token grant for client '" + client.id() + "' requires Authorization Code");
+        }
+    }
+
+    private AuthorizationGrantType toGrantType(String grantType) {
+        return switch (grantType) {
+            case "authorization_code" -> AuthorizationGrantType.AUTHORIZATION_CODE;
+            case "refresh_token" -> AuthorizationGrantType.REFRESH_TOKEN;
+            case "client_credentials" -> AuthorizationGrantType.CLIENT_CREDENTIALS;
+            default -> throw new IllegalStateException("Unsupported authorization grant type: " + grantType);
+        };
     }
 }
 

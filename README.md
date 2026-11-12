@@ -9,6 +9,7 @@ issued by this service.
 - Google login only; no local passwords.
 - Authorization Code flow with mandatory PKCE.
 - Short-lived JWT access tokens and rotated refresh tokens.
+- Scoped Client Credentials tokens for confidential machine clients.
 - PostgreSQL persistence for clients, grants, consents, and internal users.
 - External private JWK configuration with overlapping-key rotation support.
 - Exact redirect URI allowlists and one client registration per application.
@@ -37,6 +38,21 @@ The URL Shortener backend should be an OAuth 2.0 confidential client/BFF. It own
 client secret and session cookie; the React browser must not store access or refresh
 tokens. Its API validates the authenticated session and associates every managed URL
 with the internal `uid` claim.
+
+### Machine-to-machine access
+
+Enable the independent automation client and set a strong secret. Then request a token:
+
+```bash
+curl --user "$URL_SHORTENER_AUTOMATION_CLIENT_ID:$URL_SHORTENER_AUTOMATION_CLIENT_SECRET" \
+  --data "grant_type=client_credentials" \
+  --data "scope=urls.read" \
+  http://localhost:9000/oauth2/token
+```
+
+The URL Shortener API must validate the issuer, signature, expiry, audience
+`url-shortener-api`, and required `urls.*` scope. Machine tokens contain
+`subject_type=client` and do not contain a user `uid`.
 
 ## Status
 

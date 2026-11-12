@@ -13,6 +13,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.core.oidc.endpoint.OidcParameterNames;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -66,8 +67,28 @@ public class SecurityConfig {
     }
 
     @Bean
-    OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer(AuthUserRepository users) {
+    OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer(
+            AuthUserRepository users,
+            AuthServerProperties properties) {
         return context -> {
+            boolean idToken = OidcParameterNames.ID_TOKEN.equals(context.getTokenType().getValue());
+            boolean accessToken = OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType());
+            if (!idToken && !accessToken) {
+                return;
+            }
+
+            Map<String, Object> claims = new LinkedHashMap<>();
+            if (accessToken) {
+                claims.put("aud", audienceFor(properties, context.getRegisteredClient().getClientId()));
+            }
+
+            if (AuthorizationGrantType.CLIENT_CREDENTIALS.equals(context.getAuthorizationGrantType())) {
+                claims.put("subject_type", "client");
+                claims.put("client_id", context.getRegisteredClient().getClientId());
+                context.getClaims().claims(existing -> existing.putAll(claims));
+                return;
+            }
+
             if (!(context.getPrincipal().getPrincipal() instanceof OidcUser principal)) {
                 return;
             }
@@ -76,17 +97,8 @@ public class SecurityConfig {
                 return;
             }
 
-            boolean idToken = OidcParameterNames.ID_TOKEN.equals(context.getTokenType().getValue());
-            boolean accessToken = OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType());
-            if (!idToken && !accessToken) {
-                return;
-            }
-
-            Map<String, Object> claims = new LinkedHashMap<>();
             claims.put("uid", user.id().toString());
-            if (accessToken) {
-                claims.put("aud", context.getRegisteredClient().getClientId());
-            }
+            claims.put("subject_type", "user");
             if (context.getAuthorizedScopes().contains(OidcScopes.EMAIL)) {
                 claims.put("email", user.email());
                 claims.put("email_verified", user.emailVerified());
@@ -97,5 +109,13 @@ public class SecurityConfig {
             }
             context.getClaims().claims(existing -> existing.putAll(claims));
         };
+    }
+
+    private static String audienceFor(AuthServerProperties properties, String clientId) {
+        return properties.clients().stream()
+                .filter(client -> client.id().equals(clientId))
+                .map(AuthServerProperties.Client::audience)
+                .findFirst()
+                .orElse(clientId);
     }
 }

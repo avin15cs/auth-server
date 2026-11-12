@@ -27,15 +27,19 @@ public record AuthServerProperties(
             @NotBlank String id,
             String secret,
             @NotBlank String name,
-            @NotEmpty List<@NotBlank String> redirectUris,
+            List<@NotBlank String> redirectUris,
             List<@NotBlank String> postLogoutRedirectUris,
             @NotEmpty List<@NotBlank String> scopes,
+            @NotEmpty List<@NotBlank String> grantTypes,
+            @NotBlank String audience,
+            boolean enabled,
             boolean publicClient) {
 
         public Client {
             redirectUris = redirectUris == null ? List.of() : List.copyOf(redirectUris);
             postLogoutRedirectUris = postLogoutRedirectUris == null ? List.of() : List.copyOf(postLogoutRedirectUris);
             scopes = scopes == null ? List.of() : List.copyOf(scopes);
+            grantTypes = grantTypes == null ? List.of() : List.copyOf(grantTypes);
         }
     }
 }

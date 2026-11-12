@@ -18,11 +18,14 @@ Browser -> Client application -> Auth Server -> Google
 - The auth server issues its own signed access, ID, and refresh tokens.
 - Each application has a distinct client ID, redirect URI allowlist, scopes, and secret.
 - Resource servers authorize using `iss`, signature, expiry, audience/client and scopes.
+- Machine identities receive `subject_type=client`; people receive `subject_type=user` and `uid`.
 
 ## Supported flows
 
 - Authorization Code with PKCE for interactive users.
 - Refresh Token with rotation (`reuseRefreshTokens=false`).
+- Client Credentials for confidential machine clients. These tokens have no user identity,
+  OpenID scopes, or refresh token.
 - OIDC discovery, UserInfo, RP-initiated logout, revocation, introspection, and JWKS.
 
 Implicit and Resource Owner Password Credentials grants are intentionally unsupported.

@@ -1,0 +1,10 @@
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+logging:
+  level:
+    io.github.avin15cs.authserver: DEBUG
+

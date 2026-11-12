@@ -1,0 +1,74 @@
+server:
+  port: ${SERVER_PORT:9000}
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      cookie:
+        name: AUTH_SESSION
+        http-only: true
+        secure: ${COOKIE_SECURE:true}
+        same-site: lax
+      timeout: 30m
+  shutdown: graceful
+
+spring:
+  application:
+    name: auth-server
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/authserver}
+    username: ${DATABASE_USERNAME:authserver}
+    password: ${DATABASE_PASSWORD:change-me}
+    hikari:
+      maximum-pool-size: ${DATABASE_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 5000
+  flyway:
+    enabled: true
+  session:
+    jdbc:
+      initialize-schema: never
+    timeout: 30m
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            provider: google
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: [openid, profile, email]
+auth:
+  issuer: ${AUTH_ISSUER:http://localhost:9000}
+  jwk-set: ${AUTH_JWK_SET:}
+  access-token-ttl: ${ACCESS_TOKEN_TTL:10m}
+  refresh-token-ttl: ${REFRESH_TOKEN_TTL:8h}
+  clients:
+    - id: ${URL_SHORTENER_CLIENT_ID:url-shortener}
+      secret: ${URL_SHORTENER_CLIENT_SECRET:}
+      name: URL Shortener
+      redirect-uris:
+        - ${URL_SHORTENER_REDIRECT_URI:http://localhost:8080/login/oauth2/code/auth-server}
+      post-logout-redirect-uris:
+        - ${URL_SHORTENER_POST_LOGOUT_URI:http://localhost:5173/}
+      scopes: [openid, profile, email, urls.read, urls.write]
+      public-client: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: INFO

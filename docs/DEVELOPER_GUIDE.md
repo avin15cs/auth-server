@@ -82,6 +82,30 @@ Integration tests use PostgreSQL Testcontainers and therefore require Docker. Te
 cover migrations, persistent client behavior, token claims, authorization boundaries,
 and management mutations rather than mocking away protocol behavior.
 
+## Management API development
+
+The browser first calls `GET /api/session` after Google login. Its response contains the safe
+current-user view, the current persisted `admin` decision, and `csrf.headerName` plus
+`csrf.token`. Send that header on every `POST`, `PUT`, or other mutating management request.
+Do not disable CSRF for local frontend development.
+
+Client endpoints are:
+
+- `GET /api/admin/clients?search=&limit=50&offset=0`
+- `GET /api/admin/clients/{id}`
+- `POST /api/admin/clients`
+- `PUT /api/admin/clients/{id}`
+- `PUT /api/admin/clients/{id}/enabled`
+
+Creation accepts an `INTERACTIVE` or `SERVICE` client with explicit grants, scopes, audience,
+redirect URIs, and public/confidential status. A confidential creation response contains
+`clientSecret` once. Subsequent list, detail, and update responses contain neither plaintext nor
+hashed secrets. Local HTTP redirects are accepted only for loopback hosts; an HTTPS issuer makes
+HTTPS redirects mandatory.
+
+User listing supports `search`, `limit`, and `offset` query parameters. Role replacement remains
+`PUT /api/admin/users/{userId}/roles/{audience}`.
+
 ## Database changes
 
 - Add a new versioned migration under `src/main/resources/db/migration/`.
@@ -91,16 +115,15 @@ and management mutations rather than mocking away protocol behavior.
 - Flyway is intentionally required because authorization state and audit data must evolve
   deterministically across environments.
 
-## Planned admin UI development
+## Admin UI development
 
 The admin UI belongs in `admin-ui/` in this repository. During development, Vite may run
 on a separate port and proxy auth, login, logout, and management paths to port 9000. In
 production, build static assets and serve them through the auth-server origin so the UI
 uses the server-side `AUTH_SESSION` cookie without storing OAuth tokens in JavaScript.
 
-Before implementing screens, complete the API contracts in
-`ADMIN_UI_REQUIREMENTS.md`. Do not use mock production data to hide missing backend
-capabilities.
+The backend contracts required by `ADMIN_UI_REQUIREMENTS.md` are available. Do not use mock
+production data in place of them.
 
 ## Branch workflow
 

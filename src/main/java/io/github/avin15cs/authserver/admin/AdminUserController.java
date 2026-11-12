@@ -43,13 +43,14 @@ public class AdminUserController {
 
     @GetMapping
     public UserPage listUsers(
+            @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "50") int limit,
             @RequestParam(defaultValue = "0") int offset) {
-        if (limit < 1 || limit > MAX_PAGE_SIZE || offset < 0) {
+        if (limit < 1 || limit > MAX_PAGE_SIZE || offset < 0 || search.length() > 200) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid pagination");
         }
-        List<UserView> content = users.findPage(limit, offset).stream().map(this::toView).toList();
-        return new UserPage(content, users.count(), limit, offset);
+        List<UserView> content = users.findPage(search, limit, offset).stream().map(this::toView).toList();
+        return new UserPage(content, users.count(search), limit, offset);
     }
 
     @PutMapping("/{userId}/roles/{audience}")

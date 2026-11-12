@@ -56,6 +56,18 @@ Give each workload its own client ID and secret, the minimum required scopes, an
 explicit resource-server audience. Do not reuse the interactive URL Shortener client
 secret or enable OpenID scopes for Client Credentials clients.
 
+Create new clients through the authenticated management API. Confidential-client plaintext
+secrets are available only in the creation response; transfer them directly to the workload's
+secret manager and explicitly complete the UI acknowledgement. The database stores only the
+password hash, so a lost secret cannot be recovered and requires the planned credential-rotation
+capability. Disabling a client removes it from protocol lookup immediately, preventing new
+authorization and token requests; already-issued self-contained access tokens remain valid until
+expiry and resource servers must continue enforcing their short lifetime.
+
+The configured URL Shortener clients remain bootstrap registrations. Their deployment secrets
+still come from runtime secret configuration, while their audience and enabled state are
+reconciled into `auth_client_metadata` at startup. Prefer the management API for new clients.
+
 ## Signing-key rotation
 
 1. Add the new private JWK and retain the old public JWK in `AUTH_JWK_SET`.

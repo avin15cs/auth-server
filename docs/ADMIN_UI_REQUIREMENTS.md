@@ -10,6 +10,12 @@ database access.
 The admin UI is not an authorization server and not a second backend. It is a React SPA
 module in this repository that calls the Spring Boot management API.
 
+The implemented backend contract uses `GET /api/session` for the authenticated current-user and
+CSRF response, `/api/admin/clients` for paginated client lifecycle management, and
+`/api/admin/users` for searchable user pages and audience-scoped role replacement. Client paths
+use the immutable internal registration ID. Confidential creation is the only response that may
+contain `clientSecret`.
+
 ## Deployment model
 
 ```text

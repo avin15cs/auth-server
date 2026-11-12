@@ -2,6 +2,7 @@ package io.github.avin15cs.authserver.config;
 
 import io.github.avin15cs.authserver.security.PersistingOidcUserService;
 import io.github.avin15cs.authserver.security.AuthAdminAuthorizationManager;
+import io.github.avin15cs.authserver.client.ClientMetadataRepository;
 import io.github.avin15cs.authserver.user.AuthUser;
 import io.github.avin15cs.authserver.user.AuthUserRepository;
 import io.github.avin15cs.authserver.user.AuthUserRoleRepository;
@@ -24,6 +25,8 @@ import org.springframework.security.oauth2.server.authorization.token.JwtEncodin
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 
 @Configuration
@@ -53,11 +56,15 @@ public class SecurityConfig {
             AuthAdminAuthorizationManager authAdminAuthorization) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
+                        .requestMatchers("/api/session").authenticated()
                         .requestMatchers("/api/admin/**").access(authAdminAuthorization)
                         .anyRequest().authenticated())
                 .oauth2Login(login -> login.userInfoEndpoint(userInfo ->
                         userInfo.oidcUserService(oidcUserService)))
                 .logout(logout -> logout.logoutSuccessUrl("/"))
+                .exceptionHandling(exceptions -> exceptions.defaultAuthenticationEntryPointFor(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                        request -> request.getRequestURI().startsWith("/api/")))
                 .headers(headers -> headers
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'"))
                         .frameOptions(frame -> frame.deny()))
@@ -73,7 +80,7 @@ public class SecurityConfig {
     @Bean
     OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer(
             AuthUserRepository users,
-            AuthServerProperties properties,
+            ClientMetadataRepository clientMetadata,
             AuthUserRoleRepository roles) {
         return context -> {
             boolean idToken = OidcParameterNames.ID_TOKEN.equals(context.getTokenType().getValue());
@@ -84,7 +91,7 @@ public class SecurityConfig {
 
             Map<String, Object> claims = new LinkedHashMap<>();
             if (accessToken) {
-                claims.put("aud", audienceFor(properties, context.getRegisteredClient().getClientId()));
+                claims.put("aud", audienceFor(clientMetadata, context.getRegisteredClient().getId()));
             }
 
             if (AuthorizationGrantType.CLIENT_CREDENTIALS.equals(context.getAuthorizationGrantType())) {
@@ -114,7 +121,7 @@ public class SecurityConfig {
             }
             if (accessToken) {
                 var assignedRoles = roles.findRoles(
-                        user.id(), audienceFor(properties, context.getRegisteredClient().getClientId()));
+                        user.id(), audienceFor(clientMetadata, context.getRegisteredClient().getId()));
                 if (!assignedRoles.isEmpty()) {
                     claims.put("roles", assignedRoles);
                 }
@@ -123,11 +130,9 @@ public class SecurityConfig {
         };
     }
 
-    private static String audienceFor(AuthServerProperties properties, String clientId) {
-        return properties.clients().stream()
-                .filter(client -> client.id().equals(clientId))
-                .map(AuthServerProperties.Client::audience)
-                .findFirst()
-                .orElse(clientId);
+    private static String audienceFor(ClientMetadataRepository metadata, String registeredClientId) {
+        return metadata.findByRegisteredClientId(registeredClientId)
+                .map(client -> client.audience())
+                .orElseThrow(() -> new IllegalStateException("Client audience metadata is missing"));
     }
 }

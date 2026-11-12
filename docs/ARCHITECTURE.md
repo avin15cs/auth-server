@@ -38,6 +38,20 @@ identities and never receive human roles or a `uid`. The management boundary che
 persisted `AUTH_ADMIN` assignment on every request so role revocation does not wait for a
 browser session to expire.
 
+`GET /api/session` is available to authenticated Google-backed users and returns safe current
+user fields, the current persisted administrator decision, and the CSRF header name and token.
+All `/api/admin/**` data and mutations require the persisted `AUTH_ADMIN` assignment. Client
+management is exposed under `/api/admin/clients`; user search and audience-scoped role
+replacement remain under `/api/admin/users`.
+
+Spring Authorization Server's registered-client rows contain protocol configuration and hashed
+secrets. `auth_client_metadata` adds the control-plane client type, resource-server audience,
+enabled state, origin, actor references, and timestamps. The protocol-facing registered-client
+repository fails closed when metadata is absent or disabled. Token customization reads the
+persisted audience by internal registration ID, so dynamically registered clients and bootstrap
+clients use the same claim path. Bootstrap configuration remains supported, but it is reconciled
+into metadata and is not the administration system of record for dynamic clients.
+
 The planned `admin-ui/` module is a React frontend, not another auth service. It is built
 independently during development but served through the auth-server origin in production.
 It authenticates with the server-side `AUTH_SESSION` cookie, sends a CSRF token for

@@ -64,19 +64,29 @@ public class AuthUserRepository {
                 """, ROW_MAPPER, id).stream().findFirst();
     }
 
-    public long count() {
-        Long count = jdbc.queryForObject("SELECT COUNT(*) FROM auth_user", Long.class);
+    public long count(String search) {
+        String pattern = "%" + normalizeSearch(search) + "%";
+        Long count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM auth_user
+                WHERE lower(COALESCE(email, '')) LIKE ? OR lower(COALESCE(display_name, '')) LIKE ?
+                """, Long.class, pattern, pattern);
         return count == null ? 0 : count;
     }
 
-    public List<AuthUser> findPage(int limit, int offset) {
+    public List<AuthUser> findPage(String search, int limit, int offset) {
+        String pattern = "%" + normalizeSearch(search) + "%";
         return jdbc.query("""
                 SELECT id, provider, provider_subject, email, email_verified,
                        display_name, picture_url, created_at, last_login_at
                 FROM auth_user
+                WHERE lower(COALESCE(email, '')) LIKE ? OR lower(COALESCE(display_name, '')) LIKE ?
                 ORDER BY created_at DESC, id
                 LIMIT ? OFFSET ?
-                """, ROW_MAPPER, limit, offset);
+                """, ROW_MAPPER, pattern, pattern, limit, offset);
+    }
+
+    private static String normalizeSearch(String search) {
+        return search == null ? "" : search.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private static AuthUser mapUser(ResultSet rs, int rowNumber) throws SQLException {

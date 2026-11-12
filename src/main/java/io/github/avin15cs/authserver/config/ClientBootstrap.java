@@ -1,5 +1,7 @@
 package io.github.avin15cs.authserver.config;
 
+import io.github.avin15cs.authserver.client.ClientMetadataRepository;
+import io.github.avin15cs.authserver.client.ClientType;
 import java.util.UUID;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -8,7 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
-import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.client.JdbcRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
 import org.springframework.stereotype.Component;
@@ -16,22 +18,34 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClientBootstrap implements ApplicationRunner {
 
-    private final RegisteredClientRepository clients;
+    private final JdbcRegisteredClientRepository clients;
+    private final ClientMetadataRepository metadata;
     private final AuthServerProperties properties;
     private final PasswordEncoder passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
 
-    public ClientBootstrap(RegisteredClientRepository clients, AuthServerProperties properties) {
+    public ClientBootstrap(
+            JdbcRegisteredClientRepository clients,
+            ClientMetadataRepository metadata,
+            AuthServerProperties properties) {
         this.clients = clients;
+        this.metadata = metadata;
         this.properties = properties;
     }
 
     @Override
     public void run(ApplicationArguments args) {
-        properties.clients().stream()
-                .filter(AuthServerProperties.Client::enabled)
-                .filter(client -> clients.findByClientId(client.id()) == null)
-                .map(this::toRegisteredClient)
-                .forEach(clients::save);
+        properties.clients().forEach(client -> {
+            RegisteredClient registeredClient = clients.findByClientId(client.id());
+            if (registeredClient == null && client.enabled()) {
+                registeredClient = toRegisteredClient(client);
+                clients.save(registeredClient);
+            }
+            if (registeredClient != null) {
+                ClientType type = client.grantTypes().contains("client_credentials")
+                        ? ClientType.SERVICE : ClientType.INTERACTIVE;
+                metadata.upsertBootstrap(registeredClient.getId(), type, client.audience(), client.enabled());
+            }
+        });
     }
 
     private RegisteredClient toRegisteredClient(AuthServerProperties.Client client) {
@@ -95,4 +109,3 @@ public class ClientBootstrap implements ApplicationRunner {
         };
     }
 }
-

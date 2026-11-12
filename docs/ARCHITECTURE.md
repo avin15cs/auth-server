@@ -38,6 +38,20 @@ identities and never receive human roles or a `uid`. The management boundary che
 persisted `AUTH_ADMIN` assignment on every request so role revocation does not wait for a
 browser session to expire.
 
+The planned `admin-ui/` module is a React frontend, not another auth service. It is built
+independently during development but served through the auth-server origin in production.
+It authenticates with the server-side `AUTH_SESSION` cookie, sends a CSRF token for
+mutations, and never stores bearer tokens or generated client secrets in browser storage.
+See `ADMIN_UI_REQUIREMENTS.md` for its API and screen contract.
+
+```text
+Google <-- login --> Auth Server <-- same-origin session --> Auth Admin UI
+                         |
+                         +--> PostgreSQL
+                         |
+Client applications <---+-- OAuth/OIDC tokens
+```
+
 ## Supported flows
 
 - Authorization Code with PKCE for interactive users.

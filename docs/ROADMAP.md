@@ -1,7 +1,8 @@
 # Auth Server Delivery Roadmap
 
 This backlog is ordered by security and dependency, not by UI visibility. GitHub issues
-can mirror these stable story IDs after the GitHub integration is connected.
+can mirror these stable story IDs after the GitHub integration is connected. Detailed
+admin frontend acceptance criteria are maintained in `ADMIN_UI_REQUIREMENTS.md`.
 
 ## P0 -- Control plane
 

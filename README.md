@@ -29,6 +29,7 @@ committed Maven wrapper; a system Maven installation is optional.
 docker compose up -d postgres
 cp .env.example .env
 # Generate a private JWK Set, then store the output in your local secret configuration:
+cd backend
 ./mvnw -q exec:java -Dexec.mainClass=io.github.avin15cs.authserver.tools.JwkGenerator
 # Fill the remaining secrets and export the values.
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local
@@ -40,6 +41,11 @@ The issuer is `http://localhost:9000`. Discovery is available at
 For the administration UI, run `npm ci` and `npm run dev` from `admin-ui/`; Vite proxies
 same-origin service paths to port 9000. The production Docker image builds and serves the UI
 with the backend.
+
+The repository is organized as a monorepo: `backend/` contains the independently buildable
+Spring Boot authorization server, while `admin-ui/` contains the independently buildable React
+frontend. Root-level files coordinate local infrastructure, CI, documentation, and the combined
+production image.
 
 Project documentation:
 

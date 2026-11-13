@@ -42,7 +42,7 @@
 
 - OAuth/OIDC behavior, persistence, authorization boundaries, client lifecycle, and
   migrations require integration tests against PostgreSQL Testcontainers.
-- Backend: `./mvnw verify` or `.\mvnw.cmd verify` on Windows.
+- Backend: run `./mvnw verify` or `.\mvnw.cmd verify` from `backend/`.
 - Admin UI after it exists: run lint, unit tests, and production build.
 - Update CI when adding a new buildable module.
 - Keep Docker builds non-root and free of embedded secrets.

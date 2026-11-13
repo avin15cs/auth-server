@@ -52,10 +52,14 @@ persisted audience by internal registration ID, so dynamically registered client
 clients use the same claim path. Bootstrap configuration remains supported, but it is reconciled
 into metadata and is not the administration system of record for dynamic clients.
 
-The planned `admin-ui/` module is a React frontend, not another auth service. It is built
-independently during development but served through the auth-server origin in production.
+The `admin-ui/` module is a React frontend, not another auth service. It is built
+independently during development but packaged into and served through the auth-server origin in
+production.
 It authenticates with the server-side `AUTH_SESSION` cookie, sends a CSRF token for
 mutations, and never stores bearer tokens or generated client secrets in browser storage.
+Spring forwards only the explicit SPA routes `/`, `/dashboard`, `/clients`,
+`/clients/new`, `/clients/{id}`, and `/users` to the frontend entry point. Protocol,
+discovery, management API, and actuator paths are never handled by the SPA fallback.
 See `ADMIN_UI_REQUIREMENTS.md` for its API and screen contract.
 
 ```text

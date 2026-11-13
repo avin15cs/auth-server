@@ -50,6 +50,19 @@ are audited. An administrator cannot remove their own `AUTH_ADMIN` role through 
 - Browser sessions are stored in PostgreSQL, so multiple instances can run behind TLS
   without sticky sessions. Use rolling deployments and keep session schema compatible.
 
+## Administration UI
+
+The production image serves the compiled administration SPA from the auth-server origin.
+Do not deploy it on a separate origin without a new cookie, CSRF, and content-security-policy
+review. The UI contains no runtime secrets and uses only the `AUTH_SESSION` cookie plus the
+CSRF value returned by `/api/session`. Generated client secrets exist in browser memory only
+for the creation confirmation and must be transferred immediately to the target workload's
+secret manager.
+
+Deploy backend and UI changes as one immutable image. A rollback therefore restores both the
+management API and its matching frontend contract; database compatibility requirements still
+apply.
+
 ## Machine clients
 
 Give each workload its own client ID and secret, the minimum required scopes, and an

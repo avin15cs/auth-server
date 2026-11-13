@@ -6,7 +6,7 @@
 - Docker Desktop or another Docker-compatible engine
 - A Google OAuth 2.0 Web application client
 - Git
-- Node.js 22 LTS after the planned `admin-ui/` module is introduced
+- Node.js 22 LTS and npm
 
 Use the committed Maven wrapper instead of relying on a machine-specific Maven version.
 
@@ -117,10 +117,28 @@ User listing supports `search`, `limit`, and `offset` query parameters. Role rep
 
 ## Admin UI development
 
-The admin UI belongs in `admin-ui/` in this repository. During development, Vite may run
-on a separate port and proxy auth, login, logout, and management paths to port 9000. In
-production, build static assets and serve them through the auth-server origin so the UI
-uses the server-side `AUTH_SESSION` cookie without storing OAuth tokens in JavaScript.
+Install the exact locked dependencies and start Vite from `admin-ui/`:
+
+```powershell
+cd admin-ui
+npm ci
+npm run dev
+```
+
+Vite proxies API, OAuth, login, logout, actuator, and discovery paths to port 9000. Keep
+the Spring Boot service running there while developing the UI. The browser continues to
+use the server-side `AUTH_SESSION` cookie and never stores OAuth tokens in JavaScript.
+
+Run all frontend checks before opening a PR:
+
+```powershell
+npm run lint
+npm test -- --run
+npm run build
+```
+
+The production Dockerfile builds the locked frontend with Node 22, copies its static output
+into the Spring Boot application, and serves both from the auth-server origin.
 
 The backend contracts required by `ADMIN_UI_REQUIREMENTS.md` are available. Do not use mock
 production data in place of them.

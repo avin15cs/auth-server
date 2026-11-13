@@ -56,6 +56,9 @@ public class SecurityConfig {
             AuthAdminAuthorizationManager authAdminAuthorization) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/actuator/health/**", "/actuator/info", "/error").permitAll()
+                        .requestMatchers(
+                                "/", "/index.html", "/dashboard", "/clients", "/clients/**", "/users",
+                                "/assets/**", "/favicon.ico").permitAll()
                         .requestMatchers("/api/session").authenticated()
                         .requestMatchers("/api/admin/**").access(authAdminAuthorization)
                         .anyRequest().authenticated())

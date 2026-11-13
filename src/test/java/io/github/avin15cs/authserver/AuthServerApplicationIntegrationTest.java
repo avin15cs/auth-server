@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import tools.jackson.databind.JsonNode;
@@ -239,6 +240,17 @@ class AuthServerApplicationIntegrationTest {
                 .andExpect(jsonPath("$.admin").value(true))
                 .andExpect(jsonPath("$.csrf.headerName").value("X-CSRF-TOKEN"))
                 .andExpect(jsonPath("$.csrf.token").isNotEmpty());
+    }
+
+    @Test
+    void servesOnlyExplicitSpaRoutesAndPreservesDiscovery() throws Exception {
+        mockMvc.perform(get("/dashboard"))
+                .andExpect(status().isOk())
+                .andExpect(forwardedUrl("/index.html"));
+        mockMvc.perform(get("/.well-known/openid-configuration"))
+                .andExpect(status().isOk());
+        mockMvc.perform(get("/api/admin/clients"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

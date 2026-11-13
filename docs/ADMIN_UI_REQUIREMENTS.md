@@ -16,6 +16,14 @@ CSRF response, `/api/admin/clients` for paginated client lifecycle management, a
 use the immutable internal registration ID. Confidential creation is the only response that may
 contain `clientSecret`.
 
+## Implementation status
+
+The first UI slice is implemented under `admin-ui/` with all required routes and workflows.
+It uses the same-origin session and CSRF contract, keeps one-time secrets only in component
+memory, and includes frontend coverage for authentication states, validation, secret handling,
+role changes, safe API errors, and confirmation dialogs. CI validates lint, tests, production
+build, and combined container packaging.
+
 ## Deployment model
 
 ```text

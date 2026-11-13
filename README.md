@@ -22,7 +22,7 @@ break-glass access.
 
 ## Local development
 
-Requirements: Java 21, Docker, a Google Web OAuth client, and a private JWK Set. Use the
+Requirements: Java 21, Node.js 22, Docker, a Google Web OAuth client, and a private JWK Set. Use the
 committed Maven wrapper; a system Maven installation is optional.
 
 ```bash
@@ -36,6 +36,10 @@ cp .env.example .env
 
 The issuer is `http://localhost:9000`. Discovery is available at
 `/.well-known/openid-configuration`.
+
+For the administration UI, run `npm ci` and `npm run dev` from `admin-ui/`; Vite proxies
+same-origin service paths to port 9000. The production Docker image builds and serves the UI
+with the backend.
 
 Project documentation:
 

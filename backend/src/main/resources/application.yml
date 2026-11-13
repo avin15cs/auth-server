@@ -87,3 +87,13 @@ logging:
   level:
     root: INFO
     org.springframework.security: INFO
+
+springdoc:
+  paths-to-match: /api/**
+  show-actuator: false
+  swagger-ui:
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    display-request-duration: true
+    operations-sorter: method
+    persist-authorization: false

@@ -43,6 +43,11 @@ Use the committed Maven wrapper instead of relying on a machine-specific Maven v
 The local issuer is `http://localhost:9000`. Discovery is available at
 `http://localhost:9000/.well-known/openid-configuration`.
 
+After signing in as a persisted `AUTH_ADMIN`, open Swagger UI at
+`http://localhost:9000/swagger-ui.html`. Its OpenAPI JSON is served from `/v3/api-docs` and
+documents only `/api/**` management and session endpoints. For a mutation, first call
+`GET /api/session` and send the returned CSRF token using its returned header name.
+
 ## Environment variables
 
 | Variable | Purpose | Secret |
@@ -116,6 +121,13 @@ User listing supports `search`, `limit`, and `offset` query parameters. Role rep
 - Test migrations against PostgreSQL, not only an in-memory database.
 - Flyway is intentionally required because authorization state and audit data must evolve
   deterministically across environments.
+
+Spring Boot's Flyway starter provides the migration integration and core engine;
+`flyway-database-postgresql` is separately required for PostgreSQL support. Liquibase is a
+valid alternative, but this service keeps Flyway because its PostgreSQL SQL migrations and
+integration coverage are already established. Before the first shared or deployed database,
+a baseline rewrite is possible only if every affected database is deliberately reset. Otherwise,
+including for ordinary local development, add a forward migration instead of changing history.
 
 ## Admin UI development
 

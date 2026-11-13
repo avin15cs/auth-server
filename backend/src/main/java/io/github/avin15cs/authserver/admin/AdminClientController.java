@@ -6,6 +6,8 @@ import io.github.avin15cs.authserver.client.ClientManagementService.ClientPage;
 import io.github.avin15cs.authserver.client.ClientManagementService.ClientView;
 import io.github.avin15cs.authserver.client.ClientType;
 import io.github.avin15cs.authserver.security.CurrentUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/admin/clients")
+@Tag(name = "OAuth clients", description = "Audited OAuth client lifecycle management")
 public class AdminClientController {
 
     private final ClientManagementService clients;
@@ -34,6 +37,7 @@ public class AdminClientController {
     }
 
     @GetMapping
+    @Operation(summary = "List OAuth clients")
     public ClientPage list(
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "50") int limit,
@@ -42,12 +46,15 @@ public class AdminClientController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get safe OAuth client details")
     public ClientView get(@PathVariable String id) {
         return clients.get(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Register an OAuth client", description = "Returns a generated confidential-client "
+            + "secret only in this creation response.")
     public ClientCreation create(
             @Valid @RequestBody CreateClientRequest request,
             @AuthenticationPrincipal OidcUser principal) {
@@ -55,6 +62,7 @@ public class AdminClientController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update an OAuth client")
     public ClientView update(
             @PathVariable String id,
             @Valid @RequestBody UpdateClientRequest request,
@@ -63,6 +71,7 @@ public class AdminClientController {
     }
 
     @PutMapping("/{id}/enabled")
+    @Operation(summary = "Enable or disable an OAuth client")
     public ClientView setEnabled(
             @PathVariable String id,
             @Valid @RequestBody EnabledRequest request,

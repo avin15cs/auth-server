@@ -2,6 +2,8 @@ package io.github.avin15cs.authserver.admin;
 
 import io.github.avin15cs.authserver.security.CurrentUserService;
 import io.github.avin15cs.authserver.user.AuthUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.UUID;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/session")
+@Tag(name = "Session", description = "Current administrator session and CSRF contract")
 public class SessionController {
 
     private final CurrentUserService currentUser;
@@ -21,6 +24,8 @@ public class SessionController {
     }
 
     @GetMapping
+    @Operation(summary = "Get the current session", description = "Returns safe user fields, the persisted "
+            + "AUTH_ADMIN decision, and the CSRF header and token required for mutations.")
     public SessionView session(@AuthenticationPrincipal OidcUser principal, CsrfToken csrfToken) {
         AuthUser user = currentUser.require(principal);
         return new SessionView(

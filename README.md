@@ -38,6 +38,10 @@ cd backend
 The issuer is `http://localhost:9000`. Discovery is available at
 `/.well-known/openid-configuration`.
 
+Persisted `AUTH_ADMIN` users can open the management API documentation at
+`/swagger-ui.html`. The OpenAPI JSON is available at `/v3/api-docs`; both endpoints require
+the same Google-authenticated administrator session as the management API.
+
 For the administration UI, run `npm ci` and `npm run dev` from `admin-ui/`; Vite proxies
 same-origin service paths to port 9000. The production Docker image builds and serves the UI
 with the backend.

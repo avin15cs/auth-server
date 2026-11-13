@@ -59,6 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/", "/index.html", "/dashboard", "/clients", "/clients/**", "/users",
                                 "/assets/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
+                                .access(authAdminAuthorization)
                         .requestMatchers("/api/session").authenticated()
                         .requestMatchers("/api/admin/**").access(authAdminAuthorization)
                         .anyRequest().authenticated())

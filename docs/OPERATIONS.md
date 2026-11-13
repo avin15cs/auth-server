@@ -63,6 +63,11 @@ Deploy backend and UI changes as one immutable image. A rollback therefore resto
 management API and its matching frontend contract; database compatibility requirements still
 apply.
 
+The generated Swagger UI and OpenAPI description are available only to persisted
+`AUTH_ADMIN` sessions. Treat them as administrative surfaces, keep them behind the same TLS and
+access controls as the administration UI, and do not weaken their authorization for production.
+Swagger mutations remain CSRF-protected and require the token contract from `/api/session`.
+
 ## Machine clients
 
 Give each workload its own client ID and secret, the minimum required scopes, and an

@@ -254,6 +254,27 @@ class AuthServerApplicationIntegrationTest {
     }
 
     @Test
+    void exposesManagementOpenApiOnlyToPersistedAdministrators() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/v3/api-docs").with(oidcLogin()))
+                .andExpect(status().isForbidden());
+
+        createAdmin("openapi-admin-sub", "openapi-admin@example.com");
+        var adminLogin = oidcLogin().idToken(token -> token.subject("openapi-admin-sub"));
+        mockMvc.perform(get("/v3/api-docs").with(adminLogin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title").value("Auth Server Management API"))
+                .andExpect(jsonPath("$.paths['/api/session']").exists())
+                .andExpect(jsonPath("$.paths['/api/admin/clients']").exists())
+                .andExpect(jsonPath("$.paths['/api/admin/clients'].post.parameters"
+                        + "[?(@.name == 'X-CSRF-TOKEN')]").isNotEmpty())
+                .andExpect(jsonPath("$.paths['/oauth2/token']").doesNotExist());
+        mockMvc.perform(get("/swagger-ui.html").with(adminLogin))
+                .andExpect(status().is3xxRedirection());
+    }
+
+    @Test
     void managesServiceClientWithOneTimeHashedSecretDisablementAndAudit() throws Exception {
         createAdmin("client-admin-sub", "client-admin@example.com");
         var login = oidcLogin().idToken(token -> token.subject("client-admin-sub"));

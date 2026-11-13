@@ -13,6 +13,7 @@ This log records completed architectural milestones. Planned work remains in
 | Managed OAuth client lifecycle | Current development | Completed | Session and CSRF contract, paginated client management, generated one-time secrets, persisted audiences and enabled state, protocol-level disablement, audit events, and PostgreSQL lifecycle integration tests. |
 | Auth administration UI | Current development | Completed | Same-origin React administration SPA, Google login states, dashboard, client lifecycle screens, one-time secret handling, user-role management, responsive accessible styling, frontend tests, and production container integration. |
 | Monorepo module boundary | Current development | Completed | Java and Maven backend isolated under `backend/`, React frontend retained under `admin-ui/`, and root-level CI, Docker, documentation, and local infrastructure updated to orchestrate both modules. |
+| Protected management API documentation | Current development | Completed | Springdoc OpenAPI contract and Swagger UI for session and management endpoints, restricted to persisted `AUTH_ADMIN` sessions without relaxing CSRF or exposing OAuth protocol internals. |
 | Documentation baseline | Current development | Completed | Repository instructions, architecture, developer guide, admin UI contract, CI/CD guide, operations, roadmap, and engineering log aligned. |
 
 ## Architectural decisions

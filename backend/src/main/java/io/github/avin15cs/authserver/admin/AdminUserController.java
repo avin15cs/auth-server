@@ -3,6 +3,8 @@ package io.github.avin15cs.authserver.admin;
 import io.github.avin15cs.authserver.user.AuthUser;
 import io.github.avin15cs.authserver.user.AuthUserRepository;
 import io.github.avin15cs.authserver.user.AuthUserRoleRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -30,6 +32,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Validated
 @RestController
 @RequestMapping("/api/admin/users")
+@Tag(name = "Users and roles", description = "Internal users and audience-scoped human roles")
 public class AdminUserController {
 
     private static final int MAX_PAGE_SIZE = 100;
@@ -42,6 +45,7 @@ public class AdminUserController {
     }
 
     @GetMapping
+    @Operation(summary = "Search internal users")
     public UserPage listUsers(
             @RequestParam(defaultValue = "") String search,
             @RequestParam(defaultValue = "50") int limit,
@@ -56,6 +60,7 @@ public class AdminUserController {
     @PutMapping("/{userId}/roles/{audience}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Transactional
+    @Operation(summary = "Replace a user's roles for one audience")
     public void replaceRoles(
             @PathVariable UUID userId,
             @PathVariable @Pattern(regexp = "[A-Za-z0-9._:-]{1,200}") String audience,

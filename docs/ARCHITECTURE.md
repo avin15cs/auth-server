@@ -49,6 +49,13 @@ All `/api/admin/**` data and mutations require the persisted `AUTH_ADMIN` assign
 management is exposed under `/api/admin/clients`; user search and audience-scoped role
 replacement remain under `/api/admin/users`.
 
+Springdoc generates an OpenAPI description for `/api/**` only. Swagger UI at
+`/swagger-ui.html` and its `/v3/api-docs` source require the same persisted `AUTH_ADMIN`
+decision; OAuth/OIDC protocol endpoints, actuator endpoints, and internal implementation
+details are excluded from the generated management contract. Swagger does not create a second
+authentication path: it uses the existing same-origin Google session, and mutations still
+require the CSRF header and token returned by `GET /api/session`.
+
 Spring Authorization Server's registered-client rows contain protocol configuration and hashed
 secrets. `auth_client_metadata` adds the control-plane client type, resource-server audience,
 enabled state, origin, actor references, and timestamps. The protocol-facing registered-client

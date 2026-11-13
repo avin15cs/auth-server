@@ -11,6 +11,7 @@ This log records completed architectural milestones. Planned work remains in
 | Client Credentials support | `e2b099e` | Completed | Confidential machine client, explicit scopes and audience, `subject_type=client`, token-endpoint integration coverage. |
 | Audience-scoped administration foundation | `6ecc0d5` | Completed | `AUTH_ADMIN` bootstrap, audience-specific roles, audited role changes, protected management API, immediate role-revocation enforcement. |
 | Managed OAuth client lifecycle | Current development | Completed | Session and CSRF contract, paginated client management, generated one-time secrets, persisted audiences and enabled state, protocol-level disablement, audit events, and PostgreSQL lifecycle integration tests. |
+| Auth administration UI | Current development | Completed | Same-origin React administration SPA, Google login states, dashboard, client lifecycle screens, one-time secret handling, user-role management, responsive accessible styling, frontend tests, and production container integration. |
 | Documentation baseline | Current development | Completed | Repository instructions, architecture, developer guide, admin UI contract, CI/CD guide, operations, roadmap, and engineering log aligned. |
 
 ## Architectural decisions
@@ -40,8 +41,8 @@ silently diverge.
 
 ### Admin UI deployment model
 
-The planned React admin UI is one frontend for this auth platform. It will be built as a
-separate module but served through the auth-server origin in production. The Spring Boot
+The React admin UI is one frontend for this auth platform. It is built as a separate
+module but served through the auth-server origin in production. The Spring Boot
 service remains the only backend and authorization server; there is no second auth
 backend.
 
@@ -64,9 +65,12 @@ backend.
   hashes.
 - Persisted client audience and enabled metadata used by token customization and protocol
   endpoint lookup.
+- Same-origin administration UI for session state, safe health information, client
+  registration and lifecycle management, and audience-specific user roles.
+- One-time confidential-client secret display held only in component memory until the
+  administrator acknowledges it.
 
 ## Known planned work
 
-- Auth administration frontend.
 - Secret rotation and emergency revocation.
 - Rate limits, audit export, alerting, and production delivery automation.

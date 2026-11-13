@@ -16,6 +16,12 @@ or `main` with read-only repository permissions.
 - Runs `mvn --batch-mode --no-transfer-progress verify`.
 - Starts PostgreSQL Testcontainers through the test suite.
 
+### Admin UI verification
+
+- Installs Node.js 22 with the npm cache enabled.
+- Installs the exact dependency graph with `npm ci`.
+- Runs ESLint, the Vitest frontend suite, and the Vite production build.
+
 ### Container verification
 
 - Configures Docker Buildx.
@@ -29,10 +35,9 @@ or `main` with read-only repository permissions.
 - Production changes should arrive through a `dev` to `main` promotion PR.
 - CI must pass before either protected branch is merged.
 
-## Admin UI impact
+## Admin UI checks
 
-When `admin-ui/` is introduced, extend CI with a Node 22 job that uses the lockfile and
-runs, at minimum:
+The `admin-ui/` job runs:
 
 ```text
 npm ci
@@ -41,9 +46,8 @@ npm test -- --run
 npm run build
 ```
 
-The container job must also build the UI and verify that its static output is served by
-the production auth-server image. Dependency versions and container base images should
-be pinned deliberately.
+The container job also builds the UI and packages its static output into the production
+auth-server image. Dependency versions and container base images are pinned deliberately.
 
 ## Future CD requirements
 

@@ -19,7 +19,7 @@ admin frontend acceptance criteria are maintained in `ADMIN_UI_REQUIREMENTS.md`.
 
 ## P1 -- Administrator experience
 
-- [ ] `AUTH-004` Auth administration UI -- provide same-origin Google login, client
+- [x] `AUTH-004` Auth administration UI -- provide same-origin Google login, client
   registration, one-time secret display, user search, and audience-specific role
   assignment without direct database access.
 - [ ] `AUTH-005` Credential rotation and revocation -- support planned overlap, explicit

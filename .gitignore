@@ -6,4 +6,7 @@ target/
 *.pem
 *.key
 docker-data/
-
+admin-ui/node_modules/
+admin-ui/dist/
+admin-ui/coverage/
+admin-ui/*.tsbuildinfo

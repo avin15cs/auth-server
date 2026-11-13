@@ -12,6 +12,7 @@ This log records completed architectural milestones. Planned work remains in
 | Audience-scoped administration foundation | `6ecc0d5` | Completed | `AUTH_ADMIN` bootstrap, audience-specific roles, audited role changes, protected management API, immediate role-revocation enforcement. |
 | Managed OAuth client lifecycle | Current development | Completed | Session and CSRF contract, paginated client management, generated one-time secrets, persisted audiences and enabled state, protocol-level disablement, audit events, and PostgreSQL lifecycle integration tests. |
 | Auth administration UI | Current development | Completed | Same-origin React administration SPA, Google login states, dashboard, client lifecycle screens, one-time secret handling, user-role management, responsive accessible styling, frontend tests, and production container integration. |
+| Monorepo module boundary | Current development | Completed | Java and Maven backend isolated under `backend/`, React frontend retained under `admin-ui/`, and root-level CI, Docker, documentation, and local infrastructure updated to orchestrate both modules. |
 | Documentation baseline | Current development | Completed | Repository instructions, architecture, developer guide, admin UI contract, CI/CD guide, operations, roadmap, and engineering log aligned. |
 
 ## Architectural decisions

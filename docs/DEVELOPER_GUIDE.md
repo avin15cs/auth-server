@@ -21,9 +21,10 @@ Use the committed Maven wrapper instead of relying on a machine-specific Maven v
 2. Copy `.env.example` to an ignored local environment file or configure the variables
    through the IDE. Never commit populated secrets.
 
-3. Generate a development signing JWK Set:
+3. Enter the backend module and generate a development signing JWK Set:
 
    ```powershell
+   cd backend
    .\mvnw.cmd -q exec:java -Dexec.mainClass=io.github.avin15cs.authserver.tools.JwkGenerator
    ```
 
@@ -75,6 +76,7 @@ application. `AUTH_ISSUER` must exactly match the public HTTPS issuer.
 Run the complete verification suite:
 
 ```powershell
+cd backend
 .\mvnw.cmd verify
 ```
 
@@ -108,7 +110,7 @@ User listing supports `search`, `limit`, and `offset` query parameters. Role rep
 
 ## Database changes
 
-- Add a new versioned migration under `src/main/resources/db/migration/`.
+- Add a new versioned migration under `backend/src/main/resources/db/migration/`.
 - Never edit an applied migration.
 - Keep schema changes backward-compatible with rolling deployment when possible.
 - Test migrations against PostgreSQL, not only an in-memory database.

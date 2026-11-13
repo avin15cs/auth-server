@@ -4,6 +4,11 @@ The service is an OpenID Connect Provider and OAuth 2.0 Authorization Server. Go
 an upstream identity provider used only to authenticate a person. Client applications
 never receive Google access or refresh tokens.
 
+The repository is a monorepo with two application modules. `backend/` contains the Java/Spring
+authorization server and owns all protocol, persistence, management, and audit behavior.
+`admin-ui/` contains the React SPA. Root-level Docker and CI configuration assemble and verify
+the modules together without creating a second backend.
+
 ```text
 Browser -> Client application -> Auth Server -> Google
               |                    |

@@ -13,7 +13,7 @@ or `main` with read-only repository permissions.
 - Checks out the repository.
 - Installs Temurin Java 21.
 - Enables the Maven dependency cache.
-- Runs `mvn --batch-mode --no-transfer-progress verify`.
+- Runs `mvn --batch-mode --no-transfer-progress verify` from `backend/`.
 - Starts PostgreSQL Testcontainers through the test suite.
 
 ### Admin UI verification

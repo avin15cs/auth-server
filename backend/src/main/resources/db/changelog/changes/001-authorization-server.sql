@@ -1,3 +1,6 @@
+--liquibase formatted sql
+--changeset auth-server:001-authorization-server
+
 CREATE TABLE oauth2_registered_client (
     id varchar(100) NOT NULL,
     client_id varchar(100) NOT NULL,

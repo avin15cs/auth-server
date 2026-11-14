@@ -1,3 +1,6 @@
+--liquibase formatted sql
+--changeset auth-server:002-jdbc-sessions
+
 CREATE TABLE spring_session (
     primary_id char(36) NOT NULL,
     session_id char(36) NOT NULL,
@@ -21,4 +24,3 @@ CREATE TABLE spring_session_attributes (
     CONSTRAINT fk_spring_session_attributes FOREIGN KEY (session_primary_id)
         REFERENCES spring_session (primary_id) ON DELETE CASCADE
 );
-

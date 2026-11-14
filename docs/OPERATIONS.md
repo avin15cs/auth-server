@@ -46,7 +46,8 @@ are audited. An administrator cannot remove their own `AUTH_ADMIN` role through 
 
 - Liveness: `/actuator/health/liveness`
 - Readiness: `/actuator/health/readiness`
-- Run Flyway before accepting traffic.
+- Run Liquibase before accepting traffic. The application executes its changelog during startup
+  and must not receive traffic until startup and readiness checks succeed.
 - Browser sessions are stored in PostgreSQL, so multiple instances can run behind TLS
   without sticky sessions. Use rolling deployments and keep session schema compatible.
 

@@ -115,6 +115,8 @@ class AuthServerApplicationIntegrationTest {
 
     @Test
     void startsWithMigratedPersistentStoresAndBootstrappedClient() {
+        Integer appliedChangesets = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM databasechangelog", Integer.class);
         Integer usersTable = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'auth_user'",
                 Integer.class);
@@ -126,6 +128,7 @@ class AuthServerApplicationIntegrationTest {
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'auth_user_role'",
                 Integer.class);
 
+        assertThat(appliedChangesets).isEqualTo(4);
         assertThat(usersTable).isOne();
         assertThat(clients).isEqualTo(2);
         assertThat(roleTables).isOne();

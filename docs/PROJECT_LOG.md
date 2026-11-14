@@ -7,13 +7,14 @@ This log records completed architectural milestones. Planned work remains in
 
 | Milestone | Commit | Status | Deliverables |
 | --- | --- | --- | --- |
-| Standalone authorization server foundation | `740cf19` | Completed | Spring Authorization Server, Google login, Authorization Code with PKCE, refresh-token rotation, PostgreSQL persistence, Flyway, JDBC sessions, external JWK configuration, Docker and CI. |
+| Standalone authorization server foundation | `740cf19` | Completed | Spring Authorization Server, Google login, Authorization Code with PKCE, refresh-token rotation, PostgreSQL persistence, database migrations, JDBC sessions, external JWK configuration, Docker and CI. |
 | Client Credentials support | `e2b099e` | Completed | Confidential machine client, explicit scopes and audience, `subject_type=client`, token-endpoint integration coverage. |
 | Audience-scoped administration foundation | `6ecc0d5` | Completed | `AUTH_ADMIN` bootstrap, audience-specific roles, audited role changes, protected management API, immediate role-revocation enforcement. |
 | Managed OAuth client lifecycle | Current development | Completed | Session and CSRF contract, paginated client management, generated one-time secrets, persisted audiences and enabled state, protocol-level disablement, audit events, and PostgreSQL lifecycle integration tests. |
 | Auth administration UI | Current development | Completed | Same-origin React administration SPA, Google login states, dashboard, client lifecycle screens, one-time secret handling, user-role management, responsive accessible styling, frontend tests, and production container integration. |
 | Monorepo module boundary | Current development | Completed | Java and Maven backend isolated under `backend/`, React frontend retained under `admin-ui/`, and root-level CI, Docker, documentation, and local infrastructure updated to orchestrate both modules. |
 | Protected management API documentation | Current development | Completed | Springdoc OpenAPI contract and Swagger UI for session and management endpoints, restricted to persisted `AUTH_ADMIN` sessions without relaxing CSRF or exposing OAuth protocol internals. |
+| Liquibase migration baseline | Current development | Completed | Pre-production Flyway history replaced with four ordered Liquibase formatted-SQL changesets, a single master changelog, PostgreSQL integration coverage, and documented one-time local database reset. |
 | Documentation baseline | Current development | Completed | Repository instructions, architecture, developer guide, admin UI contract, CI/CD guide, operations, roadmap, and engineering log aligned. |
 
 ## Architectural decisions
@@ -38,7 +39,7 @@ uses `AUTH_ADMIN`; URL Shortener administration will use `URL_ADMIN` only for th
 ### Persistent protocol state
 
 Registered clients, authorizations, consents, sessions, internal users, roles, and audit
-events are stored in PostgreSQL. Flyway owns schema evolution so environments cannot
+events are stored in PostgreSQL. Liquibase owns schema evolution so environments cannot
 silently diverge.
 
 ### Admin UI deployment model

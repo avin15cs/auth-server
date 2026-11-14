@@ -58,7 +58,7 @@ are selected. A production workflow must:
 2. Build an immutable, non-root container.
 3. Publish it to the selected registry using least-privilege credentials.
 4. Inject database, Google, and signing secrets at runtime rather than build time.
-5. Run Flyway before accepting traffic.
+5. Run Liquibase before accepting traffic.
 6. verify readiness and support rollback.
 7. Record the deployed commit and image digest.
 

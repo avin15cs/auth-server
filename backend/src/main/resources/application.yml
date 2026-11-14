@@ -24,8 +24,9 @@ spring:
       maximum-pool-size: ${DATABASE_POOL_SIZE:10}
       minimum-idle: 2
       connection-timeout: 5000
-  flyway:
+  liquibase:
     enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
   session:
     jdbc:
       initialize-schema: never

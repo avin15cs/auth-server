@@ -1,3 +1,6 @@
+--liquibase formatted sql
+--changeset auth-server:004-managed-oauth-clients
+
 CREATE TABLE auth_client_metadata (
     registered_client_id varchar(100) NOT NULL,
     client_type varchar(20) NOT NULL,

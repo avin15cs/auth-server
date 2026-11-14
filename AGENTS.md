@@ -6,7 +6,7 @@
 
 - Repository: `https://github.com/avin15cs/auth-server`
 - Purpose: standalone OAuth 2.0 Authorization Server and OpenID Connect Provider.
-- Backend: Java 21, Spring Boot 4.1.2, Spring Authorization Server, JDBC, Flyway,
+- Backend: Java 21, Spring Boot 4.1.2, Spring Authorization Server, JDBC, Liquibase,
   PostgreSQL 15, PostgreSQL-backed Spring Session, Maven wrapper.
 - Upstream login: Google only. Keep the tokens issued to applications provider-neutral;
   Google access and refresh tokens must never leave this service.
@@ -30,7 +30,7 @@
 - The management API owns all admin mutations and audit events. The admin UI must never
   access PostgreSQL directly or place access tokens/client secrets in browser storage.
 - Preserve CSRF protection for cookie-authenticated management APIs.
-- Use Flyway for every database change. Do not modify an applied migration; add a new one.
+- Use Liquibase for every database change. Do not modify an applied changeset; add a new one.
 
 ## Branching
 

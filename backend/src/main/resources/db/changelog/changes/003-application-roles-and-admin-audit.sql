@@ -1,3 +1,6 @@
+--liquibase formatted sql
+--changeset auth-server:003-application-roles-and-admin-audit
+
 CREATE TABLE auth_user_role (
     user_id uuid NOT NULL,
     audience varchar(200) NOT NULL,

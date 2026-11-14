@@ -115,19 +115,27 @@ User listing supports `search`, `limit`, and `offset` query parameters. Role rep
 
 ## Database changes
 
-- Add a new versioned migration under `backend/src/main/resources/db/migration/`.
-- Never edit an applied migration.
+- Add a new formatted-SQL changeset under
+  `backend/src/main/resources/db/changelog/changes/` and include it from
+  `db.changelog-master.yaml`.
+- Never edit an applied changeset.
 - Keep schema changes backward-compatible with rolling deployment when possible.
 - Test migrations against PostgreSQL, not only an in-memory database.
-- Flyway is intentionally required because authorization state and audit data must evolve
+- Liquibase is intentionally required because authorization state and audit data must evolve
   deterministically across environments.
 
-Spring Boot's Flyway starter provides the migration integration and core engine;
-`flyway-database-postgresql` is separately required for PostgreSQL support. Liquibase is a
-valid alternative, but this service keeps Flyway because its PostgreSQL SQL migrations and
-integration coverage are already established. Before the first shared or deployed database,
-a baseline rewrite is possible only if every affected database is deliberately reset. Otherwise,
-including for ordinary local development, add a forward migration instead of changing history.
+Spring Boot's Liquibase starter provides the migration integration and engine. The service uses
+Liquibase formatted SQL so PostgreSQL-specific DDL remains explicit while the migration tool is
+consistent with the URL Shortener service. The pre-production Flyway history was deliberately
+replaced; existing local databases must be reset once before running this version:
+
+```powershell
+# Destructive: removes the local PostgreSQL volume and all of its data.
+docker compose down --volumes
+docker compose up -d postgres
+```
+
+After this baseline is shared, add forward changesets instead of changing history.
 
 ## Admin UI development
 

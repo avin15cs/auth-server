@@ -17,9 +17,9 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 20s
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/authserver}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/authserver}
     username: ${DATABASE_USERNAME:authserver}
-    password: ${DATABASE_PASSWORD:change-me}
+    password: ${DATABASE_PASSWORD:local-auth-password}
     hikari:
       maximum-pool-size: ${DATABASE_POOL_SIZE:10}
       minimum-idle: 2

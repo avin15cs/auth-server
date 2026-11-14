@@ -12,14 +12,16 @@ Use the committed Maven wrapper instead of relying on a machine-specific Maven v
 
 ## Local backend setup
 
-1. Start PostgreSQL:
+1. Copy `.env.example` to an ignored local environment file or configure the variables
+   through the IDE. Never commit populated secrets. The example targets the shared local
+   PostgreSQL container on port `5432`.
+
+2. Ensure the shared PostgreSQL container and Auth Server database are available:
 
    ```powershell
-   docker compose up -d postgres
+   npm ci
+   npm run db:ensure
    ```
-
-2. Copy `.env.example` to an ignored local environment file or configure the variables
-   through the IDE. Never commit populated secrets.
 
 3. Enter the backend module and generate a development signing JWK Set:
 
@@ -45,19 +47,29 @@ The local issuer is `http://localhost:9000`. Discovery is available at
 
 ## Unified local development
 
-After PostgreSQL is running and `.env` contains the required local configuration, install
-the locked dependencies for the root runner and administration UI, then start both applications:
+After `.env` contains the required local configuration, install the locked administration UI
+dependencies and start both applications:
 
 ```powershell
-npm ci
 npm --prefix admin-ui ci
 npm run dev
 ```
 
-The root command loads `.env`, starts the backend with the committed Maven wrapper and `local`
+The root command loads `.env`, idempotently starts `postgres-db`, provisions only the
+`authserver` database and role, starts the backend with the committed Maven wrapper and `local`
 Spring profile, and starts Vite on port 5173. Backend and frontend logs are labeled separately;
-press `Ctrl+C` once to stop both processes. PostgreSQL remains managed separately through
-Docker Compose so development restarts do not destroy or recreate database state.
+press `Ctrl+C` once to stop both application processes.
+
+URL Shortener has the same PostgreSQL service definition and bootstrap behavior. Whichever
+repository starts first creates `postgres-db`; the other reuses that container and provisions
+its own logical database. Local state is retained in the shared
+`url-shortener_postgres_data` volume. Do not use `docker compose down --volumes`: it would
+delete both services' local databases. Stop the shared database explicitly only when neither
+application needs it:
+
+```powershell
+docker stop postgres-db
+```
 
 After signing in as a persisted `AUTH_ADMIN`, open Swagger UI at
 `http://localhost:9000/swagger-ui.html`. Its OpenAPI JSON is served from `/v3/api-docs` and
@@ -142,16 +154,8 @@ User listing supports `search`, `limit`, and `offset` query parameters. Role rep
 
 Spring Boot's Liquibase starter provides the migration integration and engine. The service uses
 Liquibase formatted SQL so PostgreSQL-specific DDL remains explicit while the migration tool is
-consistent with the URL Shortener service. The pre-production Flyway history was deliberately
-replaced; existing local databases must be reset once before running this version:
-
-```powershell
-# Destructive: removes the local PostgreSQL volume and all of its data.
-docker compose down --volumes
-docker compose up -d postgres
-```
-
-After this baseline is shared, add forward changesets instead of changing history.
+consistent with the URL Shortener service. Each service has its own database and Liquibase
+history inside the shared local server. Add forward changesets instead of changing history.
 
 ## Admin UI development
 

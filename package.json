@@ -6,8 +6,10 @@
     "node": ">=22 <23"
   },
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --names backend,admin-ui --prefix-colors blue,magenta \"npm:dev:backend\" \"npm:dev:admin-ui\"",
-    "dev:backend": "node scripts/run-backend.mjs",
+    "db:ensure": "node scripts/ensure-local-postgres.mjs",
+    "dev": "npm run db:ensure && concurrently --kill-others-on-fail --names backend,admin-ui --prefix-colors blue,magenta \"npm:dev:backend:app\" \"npm:dev:admin-ui\"",
+    "dev:backend": "npm run db:ensure && npm run dev:backend:app",
+    "dev:backend:app": "node scripts/run-backend.mjs",
     "dev:admin-ui": "npm --prefix admin-ui run dev"
   },
   "devDependencies": {

@@ -1,19 +1,50 @@
+name: avinash-local
+
 services:
   postgres:
     image: postgres:15.19-alpine3.24
+    container_name: postgres-db
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: authserver
-      POSTGRES_USER: authserver
-      POSTGRES_PASSWORD: local-auth-password
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     ports:
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
-      - auth-postgres:/var/lib/postgresql/data
+      - local-postgres-data:/var/lib/postgresql/data
+    networks:
+      - local-database
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U authserver -d authserver"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
       interval: 5s
       timeout: 3s
       retries: 10
 
+  auth-database-init:
+    image: postgres:15.19-alpine3.24
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: password
+    volumes:
+      - ./docker/postgres/init-authserver.sql:/scripts/init-authserver.sql:ro
+    networks:
+      - local-database
+    command:
+      - psql
+      - --host=postgres
+      - --username=postgres
+      - --dbname=postgres
+      - --set=ON_ERROR_STOP=1
+      - --file=/scripts/init-authserver.sql
+
 volumes:
-  auth-postgres:
+  local-postgres-data:
+    name: url-shortener_postgres_data
+    external: true
+
+networks:
+  local-database:
+    name: avinash-local-database

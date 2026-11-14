@@ -16,6 +16,7 @@ This log records completed architectural milestones. Planned work remains in
 | Protected management API documentation | Current development | Completed | Springdoc OpenAPI contract and Swagger UI for session and management endpoints, restricted to persisted `AUTH_ADMIN` sessions without relaxing CSRF or exposing OAuth protocol internals. |
 | Liquibase migration baseline | Current development | Completed | Pre-production Flyway history replaced with four ordered Liquibase formatted-SQL changesets, a single master changelog, PostgreSQL integration coverage, and documented one-time local database reset. |
 | Unified local development command | Current development | Completed | Root npm runner loads ignored local configuration and starts the Maven backend plus Vite administration UI together with labeled output and coordinated shutdown. |
+| Shared local PostgreSQL bootstrap | Current development | Completed | Auth Server and URL Shortener reuse the `postgres-db` container while retaining separate databases, roles, and Liquibase histories; either repository can idempotently create the shared server and its owned database. |
 | Documentation baseline | Current development | Completed | Repository instructions, architecture, developer guide, admin UI contract, CI/CD guide, operations, roadmap, and engineering log aligned. |
 
 ## Architectural decisions

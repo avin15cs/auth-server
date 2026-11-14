@@ -26,29 +26,33 @@ Requirements: Java 21, Node.js 22, Docker, a Google Web OAuth client, and a priv
 committed Maven wrapper; a system Maven installation is optional.
 
 ```bash
-docker compose up -d postgres
 cp .env.example .env
 # Generate a private JWK Set, then store the output in your local secret configuration:
 cd backend
 ./mvnw -q exec:java -Dexec.mainClass=io.github.avin15cs.authserver.tools.JwkGenerator
-# Fill the remaining secrets and export the values.
-./mvnw spring-boot:run -Dspring-boot.run.profiles=local
-```
-
-The issuer is `http://localhost:9000`. Discovery is available at
-`/.well-known/openid-configuration`.
-
-To start the backend and administration UI together from the repository root after creating
-`.env` and starting PostgreSQL:
-
-```bash
+# Return to the repository root and fill the remaining secrets.
+cd ..
 npm ci
 npm --prefix admin-ui ci
 npm run dev
 ```
 
+The issuer is `http://localhost:9000`. Discovery is available at
+`/.well-known/openid-configuration`.
+
+`npm run dev` first ensures the shared local `postgres-db` container and the isolated
+`authserver` database exist, then starts the backend and administration UI. URL Shortener uses
+the same local PostgreSQL container but owns a separate `urlshortener` database.
+
+For later starts from the repository root:
+
+```bash
+npm run dev
+```
+
 This uses the Maven wrapper with the local Spring profile and starts Vite on port 5173. Press
-`Ctrl+C` once to stop both development processes.
+`Ctrl+C` once to stop both application processes; PostgreSQL remains available for either
+service.
 
 Persisted `AUTH_ADMIN` users can open the management API documentation at
 `/swagger-ui.html`. The OpenAPI JSON is available at `/v3/api-docs`; both endpoints require

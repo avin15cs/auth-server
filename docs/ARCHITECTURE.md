@@ -9,6 +9,11 @@ authorization server and owns all protocol, persistence, management, and audit b
 `admin-ui/` contains the React SPA. Root-level Docker and CI configuration assemble and verify
 the modules together without creating a second backend.
 
+Local development reuses one container named `postgres-db` across Auth Server and URL Shortener.
+The services remain isolated through separate `authserver` and `urlshortener` databases, users,
+and Liquibase histories. Production does not share this topology: each service receives its own
+database endpoint and credentials through environment configuration.
+
 ```text
 Browser -> Client application -> Auth Server -> Google
               |                    |

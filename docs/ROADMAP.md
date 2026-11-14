@@ -32,3 +32,9 @@ admin frontend acceptance criteria are maintained in `ADMIN_UI_REQUIREMENTS.md`.
 
 - [ ] `AUTH-007` Rate limits and abuse controls for login, token, and management endpoints.
 - [ ] `AUTH-008` Audit export, alerting, backup/restore drill, and signing-key rotation drill.
+
+## Developer experience
+
+- [x] `AUTH-009` Shared local PostgreSQL bootstrap -- allow Auth Server and URL Shortener
+  to start or reuse one `postgres-db` container while retaining service-owned databases,
+  credentials, and Liquibase histories.

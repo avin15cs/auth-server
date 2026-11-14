@@ -38,11 +38,23 @@ cd backend
 The issuer is `http://localhost:9000`. Discovery is available at
 `/.well-known/openid-configuration`.
 
+To start the backend and administration UI together from the repository root after creating
+`.env` and starting PostgreSQL:
+
+```bash
+npm ci
+npm --prefix admin-ui ci
+npm run dev
+```
+
+This uses the Maven wrapper with the local Spring profile and starts Vite on port 5173. Press
+`Ctrl+C` once to stop both development processes.
+
 Persisted `AUTH_ADMIN` users can open the management API documentation at
 `/swagger-ui.html`. The OpenAPI JSON is available at `/v3/api-docs`; both endpoints require
 the same Google-authenticated administrator session as the management API.
 
-For the administration UI, run `npm ci` and `npm run dev` from `admin-ui/`; Vite proxies
+To run only the administration UI, use `npm ci` and `npm run dev` from `admin-ui/`; Vite proxies
 same-origin service paths to port 9000. The production Docker image builds and serves the UI
 with the backend.
 

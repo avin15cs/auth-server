@@ -1,0 +1,16 @@
+{
+  "name": "auth-server-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail --names backend,admin-ui --prefix-colors blue,magenta \"npm:dev:backend\" \"npm:dev:admin-ui\"",
+    "dev:backend": "node scripts/run-backend.mjs",
+    "dev:admin-ui": "npm --prefix admin-ui run dev"
+  },
+  "devDependencies": {
+    "concurrently": "10.0.7"
+  }
+}

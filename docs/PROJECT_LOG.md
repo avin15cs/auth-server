@@ -15,6 +15,7 @@ This log records completed architectural milestones. Planned work remains in
 | Monorepo module boundary | Current development | Completed | Java and Maven backend isolated under `backend/`, React frontend retained under `admin-ui/`, and root-level CI, Docker, documentation, and local infrastructure updated to orchestrate both modules. |
 | Protected management API documentation | Current development | Completed | Springdoc OpenAPI contract and Swagger UI for session and management endpoints, restricted to persisted `AUTH_ADMIN` sessions without relaxing CSRF or exposing OAuth protocol internals. |
 | Liquibase migration baseline | Current development | Completed | Pre-production Flyway history replaced with four ordered Liquibase formatted-SQL changesets, a single master changelog, PostgreSQL integration coverage, and documented one-time local database reset. |
+| Unified local development command | Current development | Completed | Root npm runner loads ignored local configuration and starts the Maven backend plus Vite administration UI together with labeled output and coordinated shutdown. |
 | Documentation baseline | Current development | Completed | Repository instructions, architecture, developer guide, admin UI contract, CI/CD guide, operations, roadmap, and engineering log aligned. |
 
 ## Architectural decisions

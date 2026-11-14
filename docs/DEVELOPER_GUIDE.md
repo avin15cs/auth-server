@@ -43,6 +43,22 @@ Use the committed Maven wrapper instead of relying on a machine-specific Maven v
 The local issuer is `http://localhost:9000`. Discovery is available at
 `http://localhost:9000/.well-known/openid-configuration`.
 
+## Unified local development
+
+After PostgreSQL is running and `.env` contains the required local configuration, install
+the locked dependencies for the root runner and administration UI, then start both applications:
+
+```powershell
+npm ci
+npm --prefix admin-ui ci
+npm run dev
+```
+
+The root command loads `.env`, starts the backend with the committed Maven wrapper and `local`
+Spring profile, and starts Vite on port 5173. Backend and frontend logs are labeled separately;
+press `Ctrl+C` once to stop both processes. PostgreSQL remains managed separately through
+Docker Compose so development restarts do not destroy or recreate database state.
+
 After signing in as a persisted `AUTH_ADMIN`, open Swagger UI at
 `http://localhost:9000/swagger-ui.html`. Its OpenAPI JSON is served from `/v3/api-docs` and
 documents only `/api/**` management and session endpoints. For a mutation, first call
@@ -139,7 +155,7 @@ After this baseline is shared, add forward changesets instead of changing histor
 
 ## Admin UI development
 
-Install the exact locked dependencies and start Vite from `admin-ui/`:
+To run only the frontend, install the exact locked dependencies and start Vite from `admin-ui/`:
 
 ```powershell
 cd admin-ui

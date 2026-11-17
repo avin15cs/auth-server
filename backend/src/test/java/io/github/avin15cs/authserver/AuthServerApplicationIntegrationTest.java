@@ -75,6 +75,8 @@ class AuthServerApplicationIntegrationTest {
         registry.add("auth.local-login.enabled", () -> "true");
         registry.add("auth.local-login.username", () -> "admin");
         registry.add("auth.local-login.password", () -> "integration-test-local-password");
+        registry.add("auth.password-login.enabled", () -> "true");
+        registry.add("auth.password-login.invitation-ttl", () -> "24h");
         registry.add("auth.clients[0].id", () -> "url-shortener");
         registry.add("auth.clients[0].name", () -> "URL Shortener");
         registry.add("auth.clients[0].secret", () -> "test-client-secret-with-sufficient-entropy");
@@ -137,7 +139,7 @@ class AuthServerApplicationIntegrationTest {
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'auth_user_role'",
                 Integer.class);
 
-        assertThat(appliedChangesets).isEqualTo(5);
+        assertThat(appliedChangesets).isEqualTo(6);
         assertThat(usersTable).isOne();
         assertThat(clients).isEqualTo(2);
         assertThat(roleTables).isOne();
@@ -156,7 +158,7 @@ class AuthServerApplicationIntegrationTest {
     void localAdministratorCanAuthenticateAndUseThePersistedSession() throws Exception {
         mockMvc.perform(get("/api/login-options"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.localLoginEnabled").value(true))
+                .andExpect(jsonPath("$.passwordLoginEnabled").value(true))
                 .andExpect(jsonPath("$.csrf.parameterName").value("_csrf"))
                 .andExpect(jsonPath("$.csrf.token").isNotEmpty());
 
@@ -169,6 +171,7 @@ class AuthServerApplicationIntegrationTest {
         mockMvc.perform(get("/api/session").session(session))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.displayName").value("Local Administrator"))
+                .andExpect(jsonPath("$.invitationsEnabled").value(true))
                 .andExpect(jsonPath("$.admin").value(true));
 
         mockMvc.perform(get("/oauth2/authorize")
@@ -186,6 +189,64 @@ class AuthServerApplicationIntegrationTest {
         mockMvc.perform(formLogin().user("admin").password("wrong-password"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("http://localhost:5173/?loginError=true"));
+    }
+
+    @Test
+    void administratorCanInviteAProductionPasswordUserWithAOneTimeToken() throws Exception {
+        createAdmin("inviter-sub", "inviter@example.com");
+        var inviter = oidcLogin().idToken(token -> token.subject("inviter-sub"));
+
+        String creationBody = mockMvc.perform(post("/api/admin/invitations")
+                        .with(inviter).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"new-admin@example.com\",\"grantAuthAdmin\":true}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.invitation.email").value("new-admin@example.com"))
+                .andExpect(jsonPath("$.invitation.status").value("PENDING"))
+                .andExpect(jsonPath("$.setupUrl").isNotEmpty())
+                .andReturn().getResponse().getContentAsString();
+        String setupUrl = objectMapper.readTree(creationBody).path("setupUrl").asText();
+        String invitationToken = setupUrl.substring(setupUrl.indexOf("#token=") + 7);
+
+        assertThat(jdbc.queryForObject("SELECT token_hash FROM auth_user_invitation", String.class))
+                .doesNotContain(invitationToken);
+        mockMvc.perform(get("/api/invitations/setup")
+                        .header("X-Invitation-Token", invitationToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("new-admin@example.com"));
+
+        mockMvc.perform(post("/api/invitations/accept")
+                        .header("X-Invitation-Token", invitationToken)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"newadmin","displayName":"New Admin",
+                                 "password":"a-secure-test-password"}
+                                """))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(post("/api/invitations/accept")
+                        .header("X-Invitation-Token", invitationToken)
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"username":"another","displayName":"Another User",
+                                 "password":"another-secure-password"}
+                                """))
+                .andExpect(status().isGone());
+
+        var invitedLogin = mockMvc.perform(formLogin().user("newadmin").password("a-secure-test-password"))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+        MockHttpSession invitedSession = (MockHttpSession) invitedLogin.getRequest().getSession(false);
+        mockMvc.perform(get("/api/session").session(invitedSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.email").value("new-admin@example.com"))
+                .andExpect(jsonPath("$.admin").value(true));
+
+        assertThat(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM admin_audit_event
+                WHERE action IN ('USER_INVITATION_CREATED', 'USER_INVITATION_ACCEPTED', 'INVITED_ADMIN_GRANTED')
+                """, Integer.class)).isEqualTo(3);
     }
 
     @Test

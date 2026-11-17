@@ -3,6 +3,7 @@ import type { OAuthClient, Session } from '../types'
 export const adminSession: Session = {
   user: { id: 'user-1', email: 'admin@example.com', displayName: 'Ada Admin', pictureUrl: null },
   admin: true,
+  invitationsEnabled: true,
   csrf: { headerName: 'X-CSRF-TOKEN', token: 'csrf-test-token' },
 }
 

@@ -54,6 +54,9 @@ auth:
     enabled: ${LOCAL_LOGIN_ENABLED:false}
     username: ${LOCAL_ADMIN_USERNAME:}
     password: ${LOCAL_ADMIN_PASSWORD:}
+  password-login:
+    enabled: ${PASSWORD_LOGIN_ENABLED:false}
+    invitation-ttl: ${AUTH_INVITATION_TTL:24h}
   clients:
     - id: ${URL_SHORTENER_CLIENT_ID:url-shortener}
       enabled: true

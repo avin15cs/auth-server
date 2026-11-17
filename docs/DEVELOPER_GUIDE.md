@@ -57,6 +57,12 @@ The local profile seeds or refreshes that account's BCrypt hash and persisted `A
 role at startup. Local form login is rejected when either the flag is false or the active
 profile is not `local`. Never carry these development credentials into production.
 
+To exercise the production invitation path locally, also set `PASSWORD_LOGIN_ENABLED=true`.
+Sign in as an existing `AUTH_ADMIN`, open **Users & roles**, create an invitation, copy its
+one-time setup URL, and open it in a signed-out browser. The recipient selects a 3-64 character
+username and a password of at least 12 characters. `AUTH_INVITATION_TTL` defaults to `24h` and
+may not exceed seven days.
+
 ## Unified local development
 
 After `.env` contains the required local configuration, install the locked administration UI
@@ -101,6 +107,8 @@ documents only `/api/**` management and session endpoints. For a mutation, first
 | `LOCAL_LOGIN_ENABLED` | Enables development-only local credential login under the `local` profile | No |
 | `LOCAL_ADMIN_USERNAME` | Development-only local administrator username | No |
 | `LOCAL_ADMIN_PASSWORD` | Development-only local administrator password, stored as a hash | Yes |
+| `PASSWORD_LOGIN_ENABLED` | Enables invited username/password accounts in any profile | No |
+| `AUTH_INVITATION_TTL` | Lifetime of one-time account setup links, maximum seven days | No |
 | `AUTH_JWK_SET` | Private signing JWK Set | Yes |
 | `ACCESS_TOKEN_TTL` | Access-token lifetime | No |
 | `REFRESH_TOKEN_TTL` | Refresh-token lifetime | No |
@@ -140,8 +148,21 @@ current-user view, the current persisted `admin` decision, and `csrf.headerName`
 `csrf.token`. Send that header on every `POST`, `PUT`, or other mutating management request.
 Do not disable CSRF for local frontend development.
 
-Before authentication, `GET /api/login-options` returns whether local login is available and
+Before authentication, `GET /api/login-options` returns whether password login is available and
 the CSRF form parameter required by `POST /login`. It does not disclose configured usernames.
+
+Invitation endpoints are:
+
+- `GET /api/admin/invitations`
+- `POST /api/admin/invitations` (returns `setupUrl` once)
+- `DELETE /api/admin/invitations/{invitationId}`
+- `GET /api/invitations/setup` with the token in `X-Invitation-Token`
+- `POST /api/invitations/accept` with the token in `X-Invitation-Token`
+
+The setup link places its token in the URL fragment so it is not sent in HTTP requests; the UI
+removes it from the address bar before using the token header. The two token endpoints are public
+but remain CSRF-protected for acceptance. The database stores
+only a SHA-256 token hash, and an accepted, expired, revoked, or superseded token cannot be reused.
 
 Client endpoints are:
 

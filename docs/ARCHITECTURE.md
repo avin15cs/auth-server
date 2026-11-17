@@ -1,8 +1,9 @@
 # Architecture
 
 The service is an OpenID Connect Provider and OAuth 2.0 Authorization Server. Google is
-an upstream identity provider used only to authenticate a person. A development-only local
-credential provider is also available under the `local` profile. Client applications never
+an upstream identity provider used only to authenticate a person. Administrator-invited local
+credentials are available when password login is explicitly enabled, and a separate development
+bootstrap credential is available only under the `local` profile. Client applications never
 receive Google access or refresh tokens or a person's password.
 
 The repository is a monorepo with two application modules. `backend/` contains the Java/Spring
@@ -24,8 +25,9 @@ Browser -> Client application -> Auth Server -> Google
 
 ## Trust boundaries
 
-- Google establishes an external identity using its immutable `sub` claim. Local credentials
-  use a normalized username and a BCrypt password hash and are disabled outside the local profile.
+- Google establishes an external identity using its immutable `sub` claim. Invited credentials
+  use a normalized username and a BCrypt password hash. The configured bootstrap credential is
+  disabled outside the local profile, while invited credentials require `PASSWORD_LOGIN_ENABLED`.
 - The auth server maps `(provider, provider_subject)` to its own immutable `uid`.
 - The auth server issues its own signed access, ID, and refresh tokens.
 - Each application has a distinct client ID, redirect URI allowlist, scopes, and secret.
@@ -91,10 +93,12 @@ Client applications <-------+-- OAuth/OIDC tokens
 ```
 
 `auth_local_credential` stores only the local username, password hash, enabled state, and
-internal user reference. The local bootstrap is gated by both the `local` profile and
-`LOCAL_LOGIN_ENABLED`; disabling either prevents authentication even if a credential row
-remains. Both login providers resolve to immutable internal `uid` values before authorization
-and token customization.
+internal user reference. `auth_user_invitation` stores invitation metadata and only a SHA-256
+token hash; the random setup token is returned once and never persisted in plaintext. Invitation
+acceptance atomically creates the internal user and BCrypt credential, consumes the expiring
+token, optionally grants `AUTH_ADMIN`, and records audit events. Reissuing for an email revokes
+its earlier pending invitation. Both login providers resolve to immutable internal `uid` values
+before authorization and token customization.
 
 ## Supported flows
 

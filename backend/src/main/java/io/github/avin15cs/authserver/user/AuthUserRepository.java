@@ -64,6 +64,19 @@ public class AuthUserRepository {
                 .orElseThrow(() -> new IllegalStateException("Local user was not persisted"));
     }
 
+    @Transactional
+    public AuthUser createInvitedLocalUser(String username, String email, String displayName) {
+        String normalizedUsername = username.trim().toLowerCase(java.util.Locale.ROOT);
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO auth_user (
+                    id, provider, provider_subject, email, email_verified,
+                    display_name, picture_url, created_at, last_login_at
+                ) VALUES (?, 'local', ?, ?, true, ?, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                """, id, normalizedUsername, email, displayName);
+        return findById(id).orElseThrow(() -> new IllegalStateException("Invited user was not persisted"));
+    }
+
     public void recordLogin(UUID userId) {
         jdbc.update("UPDATE auth_user SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?", userId);
     }
@@ -84,6 +97,14 @@ public class AuthUserRepository {
                 FROM auth_user
                 WHERE id = ?
                 """, ROW_MAPPER, id).stream().findFirst();
+    }
+
+    public boolean localUserExistsForEmail(String email) {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM auth_user
+                WHERE provider = 'local' AND lower(email) = lower(?)
+                """, Integer.class, email);
+        return count != null && count > 0;
     }
 
     public long count(String search) {

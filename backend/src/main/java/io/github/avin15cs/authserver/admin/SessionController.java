@@ -1,6 +1,7 @@
 package io.github.avin15cs.authserver.admin;
 
 import io.github.avin15cs.authserver.security.CurrentUserService;
+import io.github.avin15cs.authserver.security.PasswordLoginAvailability;
 import io.github.avin15cs.authserver.user.AuthUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,9 +18,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class SessionController {
 
     private final CurrentUserService currentUser;
+    private final PasswordLoginAvailability passwordLogin;
 
-    public SessionController(CurrentUserService currentUser) {
+    public SessionController(CurrentUserService currentUser, PasswordLoginAvailability passwordLogin) {
         this.currentUser = currentUser;
+        this.passwordLogin = passwordLogin;
     }
 
     @GetMapping
@@ -30,10 +33,11 @@ public class SessionController {
         return new SessionView(
                 new UserView(user.id(), user.email(), user.displayName(), user.pictureUrl()),
                 currentUser.isAdmin(user),
+                passwordLogin.invitationsEnabled(),
                 new CsrfView(csrfToken.getHeaderName(), csrfToken.getToken()));
     }
 
-    public record SessionView(UserView user, boolean admin, CsrfView csrf) {
+    public record SessionView(UserView user, boolean admin, boolean invitationsEnabled, CsrfView csrf) {
     }
 
     public record UserView(UUID id, String email, String displayName, String pictureUrl) {

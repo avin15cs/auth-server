@@ -45,7 +45,8 @@ public class LocalAdministratorBootstrap implements ApplicationRunner {
                     "LOCAL_ADMIN_USERNAME and LOCAL_ADMIN_PASSWORD are required when local login is enabled");
         }
         AuthUser user = users.upsertLocalUser(properties.username(), "Local Administrator");
-        credentials.upsert(user.id(), properties.username(), passwordEncoder.encode(properties.password()));
+        credentials.upsertBootstrap(
+                user.id(), properties.username(), passwordEncoder.encode(properties.password()));
         roles.grantLocalBootstrapAdministrator(user);
     }
 }

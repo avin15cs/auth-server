@@ -6,6 +6,7 @@ export interface Session {
     pictureUrl: string | null
   }
   admin: boolean
+  invitationsEnabled: boolean
   csrf: {
     headerName: string
     token: string
@@ -72,4 +73,25 @@ export interface UserPage {
   total: number
   limit: number
   offset: number
+}
+
+export interface InvitationCreation {
+  invitation: {
+    id: string
+    email: string
+    grantAuthAdmin: boolean
+    expiresAt: string
+    createdAt: string
+    status: 'PENDING'
+  }
+  setupUrl: string
+}
+
+export interface InvitationSetup {
+  email: string
+  expiresAt: string
+  csrf: {
+    headerName: string
+    token: string
+  }
 }

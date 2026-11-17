@@ -65,10 +65,11 @@ public class SecurityConfig {
             @Value("${auth.ui-origin:http://localhost:5173/}") String uiOrigin) throws Exception {
         http.authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
-                                "/actuator/health/**", "/actuator/info", "/error", "/api/login-options")
+                                "/actuator/health/**", "/actuator/info", "/error", "/api/login-options",
+                                "/api/invitations/**")
                                 .permitAll()
                         .requestMatchers(
-                                "/", "/index.html", "/dashboard", "/clients", "/clients/**", "/users",
+                                "/", "/index.html", "/dashboard", "/clients", "/clients/**", "/users", "/invite",
                                 "/assets/**", "/favicon.ico").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
                                 .access(authAdminAuthorization)

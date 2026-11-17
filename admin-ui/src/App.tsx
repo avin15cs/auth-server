@@ -11,6 +11,7 @@ import { ClientsPage } from './pages/ClientsPage'
 import { NewClientPage } from './pages/NewClientPage'
 import { ClientDetailsPage } from './pages/ClientDetailsPage'
 import { UsersPage } from './pages/UsersPage'
+import { InvitationPage } from './pages/InvitationPage'
 import { ShieldIcon } from './components/Icons'
 
 type AuthState =
@@ -20,6 +21,11 @@ type AuthState =
   | { kind: 'error' }
 
 export function App() {
+  if (window.location.pathname === '/invite') return <InvitationPage />
+  return <AuthenticationEntry />
+}
+
+function AuthenticationEntry() {
   const [auth, setAuth] = useState<AuthState>({ kind: 'loading' })
 
   useEffect(() => {
@@ -54,7 +60,7 @@ export function App() {
           {new URLSearchParams(window.location.search).has('loginError') && (
             <div className="alert alert--error" role="alert">Invalid username or password.</div>
           )}
-          {auth.options.localLoginEnabled && (
+          {auth.options.passwordLoginEnabled && (
             <form className="local-login" method="post" action="/login">
               <input type="hidden" name={auth.options.csrf.parameterName} value={auth.options.csrf.token} />
               <label>
@@ -68,7 +74,7 @@ export function App() {
               <button className="button button--primary button--wide" type="submit">Sign in</button>
             </form>
           )}
-          {auth.options.localLoginEnabled && <div className="login-divider"><span>or</span></div>}
+          {auth.options.passwordLoginEnabled && <div className="login-divider"><span>or</span></div>}
           <a className="button button--primary button--wide" href="/oauth2/authorization/google">Continue with Google</a>
         </div>
       </CenterState>

@@ -13,12 +13,12 @@ public class LocalUserDetailsService implements UserDetailsService {
 
     private final LocalCredentialRepository credentials;
     private final AuthUserRoleRepository roles;
-    private final LocalLoginAvailability availability;
+    private final PasswordLoginAvailability availability;
 
     public LocalUserDetailsService(
             LocalCredentialRepository credentials,
             AuthUserRoleRepository roles,
-            LocalLoginAvailability availability) {
+            PasswordLoginAvailability availability) {
         this.credentials = credentials;
         this.roles = roles;
         this.availability = availability;
@@ -31,6 +31,14 @@ public class LocalUserDetailsService implements UserDetailsService {
         }
         LocalCredentialRepository.LocalCredential credential = credentials.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid username or password"));
+        boolean sourceEnabled = switch (credential.credentialSource()) {
+            case "local-bootstrap" -> availability.localBootstrapEnabled();
+            case "invitation" -> availability.invitationsEnabled();
+            default -> false;
+        };
+        if (!sourceEnabled) {
+            throw new UsernameNotFoundException("Invalid username or password");
+        }
         List<SimpleGrantedAuthority> authorities = roles
                 .findRoles(credential.userId(), AuthUserRoleRepository.AUTH_SERVER_AUDIENCE).stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role))

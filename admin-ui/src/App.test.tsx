@@ -10,7 +10,7 @@ describe('authentication states', () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce(jsonResponse({ title: 'Unauthorized' }, 401))
       .mockResolvedValueOnce(jsonResponse({
-        localLoginEnabled: true,
+        passwordLoginEnabled: true,
         csrf: { parameterName: '_csrf', headerName: 'X-CSRF-TOKEN', token: 'csrf-token' },
       })))
     render(<MemoryRouter><App /></MemoryRouter>)

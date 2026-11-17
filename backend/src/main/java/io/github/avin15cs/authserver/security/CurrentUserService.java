@@ -3,6 +3,7 @@ package io.github.avin15cs.authserver.security;
 import io.github.avin15cs.authserver.user.AuthUser;
 import io.github.avin15cs.authserver.user.AuthUserRepository;
 import io.github.avin15cs.authserver.user.AuthUserRoleRepository;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
@@ -19,11 +20,18 @@ public class CurrentUserService {
         this.roles = roles;
     }
 
-    public AuthUser require(OidcUser principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+    public Optional<AuthUser> find(Object principal) {
+        if (principal instanceof OidcUser oidcUser) {
+            return users.findByProviderSubject("google", oidcUser.getSubject());
         }
-        return users.findByProviderSubject("google", principal.getSubject())
+        if (principal instanceof LocalUserPrincipal localUser) {
+            return users.findById(localUser.userId());
+        }
+        return Optional.empty();
+    }
+
+    public AuthUser require(Object principal) {
+        return find(principal)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 

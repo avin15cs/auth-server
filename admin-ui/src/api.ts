@@ -1,4 +1,41 @@
-import type { Session } from './types'
+import type { InvitationSetup, Session } from './types'
+
+export interface LoginOptions {
+  passwordLoginEnabled: boolean
+  csrf: {
+    parameterName: string
+    headerName: string
+    token: string
+  }
+}
+
+export async function loadInvitation(token: string): Promise<InvitationSetup> {
+  const response = await fetch('/api/invitations/setup', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json', 'X-Invitation-Token': token },
+  })
+  if (!response.ok) throw new ApiError(await safeMessage(response), response.status)
+  return response.json() as Promise<InvitationSetup>
+}
+
+export async function acceptInvitation(token: string, setup: InvitationSetup, body: {
+  username: string
+  displayName: string
+  password: string
+}): Promise<void> {
+  const response = await fetch('/api/invitations/accept', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'X-Invitation-Token': token,
+      [setup.csrf.headerName]: setup.csrf.token,
+    },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new ApiError(await safeMessage(response), response.status)
+}
 
 export class ApiError extends Error {
   constructor(
@@ -31,6 +68,15 @@ export async function loadSession(): Promise<Session> {
   })
   if (!response.ok) throw new ApiError(await safeMessage(response), response.status)
   return response.json() as Promise<Session>
+}
+
+export async function loadLoginOptions(): Promise<LoginOptions> {
+  const response = await fetch('/api/login-options', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) throw new ApiError(await safeMessage(response), response.status)
+  return response.json() as Promise<LoginOptions>
 }
 
 export class AdminApi {

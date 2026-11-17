@@ -3,7 +3,7 @@ import { errorMessage } from '../api'
 import { SearchIcon } from '../components/Icons'
 import { ConfirmDialog, EmptyState, ErrorBanner, LoadingBlock, PageHeader, Pagination } from '../components/Ui'
 import { useSession } from '../session'
-import type { AuthUser, UserPage } from '../types'
+import type { AuthUser, InvitationCreation, UserPage } from '../types'
 
 const PAGE_SIZE = 20
 const DEFAULT_AUDIENCE = 'url-shortener-api'
@@ -15,7 +15,7 @@ interface PendingRoleChange {
 }
 
 export function UsersPage() {
-  const { api } = useSession()
+  const { api, session } = useSession()
   const [page, setPage] = useState<UserPage | null>(null)
   const [query, setQuery] = useState('')
   const [search, setSearch] = useState('')
@@ -25,6 +25,12 @@ export function UsersPage() {
   const [notice, setNotice] = useState('')
   const [pending, setPending] = useState<PendingRoleChange | null>(null)
   const [revision, setRevision] = useState(0)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteAdmin, setInviteAdmin] = useState(false)
+  const [invitation, setInvitation] = useState<InvitationCreation | null>(null)
+  const [inviteError, setInviteError] = useState('')
+  const [inviting, setInviting] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -59,9 +65,58 @@ export function UsersPage() {
     }
   }
 
+  async function createInvitation(event: FormEvent) {
+    event.preventDefault()
+    setInviting(true)
+    setInviteError('')
+    try {
+      const created = await api.mutate<InvitationCreation>('/api/admin/invitations', 'POST', {
+        email: inviteEmail.trim(),
+        grantAuthAdmin: inviteAdmin,
+      })
+      setInvitation(created)
+      setInviteEmail('')
+      setInviteAdmin(false)
+      setCopied(false)
+    } catch (reason: unknown) {
+      setInviteError(errorMessage(reason))
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  async function copyInvitation() {
+    if (!invitation) return
+    await navigator.clipboard.writeText(invitation.setupUrl)
+    setCopied(true)
+  }
+
   return (
     <div className="page">
       <PageHeader eyebrow="Human identities" title="Users & roles" description="Assign human roles only within the resource-server audience where they apply." />
+      {session.invitationsEnabled && <section className="panel invitation-panel" aria-labelledby="invite-heading">
+        <div>
+          <p className="eyebrow">Password access</p>
+          <h2 id="invite-heading">Invite a user</h2>
+          <p>Create a one-time setup link. The recipient chooses their username and password; the plaintext password never passes through an administrator.</p>
+        </div>
+        {inviteError && <ErrorBanner message={inviteError} />}
+        {!invitation && (
+          <form className="invitation-form" onSubmit={createInvitation}>
+            <label className="field"><span>Email address</span><input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} autoComplete="off" required /></label>
+            <label className="role-toggle"><input type="checkbox" checked={inviteAdmin} onChange={(event) => setInviteAdmin(event.target.checked)} /><span>Grant AUTH_ADMIN when accepted</span></label>
+            <button className="button button--primary" type="submit" disabled={inviting}>{inviting ? 'Creating…' : 'Create invitation'}</button>
+          </form>
+        )}
+        {invitation && (
+          <div className="invitation-result" role="status">
+            <strong>Copy this setup link now</strong>
+            <p>It is shown once and expires {new Date(invitation.invitation.expiresAt).toLocaleString()}.</p>
+            <div><code data-testid="one-time-invitation">{invitation.setupUrl}</code><button className="button button--ghost button--small" type="button" onClick={copyInvitation}>{copied ? 'Copied' : 'Copy link'}</button></div>
+            <button className="text-button" type="button" onClick={() => setInvitation(null)}>I saved the link</button>
+          </div>
+        )}
+      </section>}
       <section className="panel panel--table">
         <div className="table-toolbar table-toolbar--users">
           <form role="search" onSubmit={submit} className="inline-search"><label className="search-field"><SearchIcon /><span className="sr-only">Search users</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search name or email" /></label><button className="button button--ghost" type="submit">Search</button></form>
@@ -70,7 +125,7 @@ export function UsersPage() {
         {error && <ErrorBanner message={error} />}
         {notice && <div className="alert alert--success" role="status">{notice}</div>}
         {!page && !error && <LoadingBlock />}
-        {page && page.content.length === 0 && <EmptyState title="No users found">Users appear after their first verified Google login.</EmptyState>}
+        {page && page.content.length === 0 && <EmptyState title="No users found">Users appear after Google login or accepting an administrator invitation.</EmptyState>}
         {page && page.content.length > 0 && (
           <>
             <div className="user-list">{page.content.map((user) => {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { AdminApi, ApiError, loadSession } from './api'
+import { AdminApi, ApiError, loadLoginOptions, loadSession } from './api'
+import type { LoginOptions } from './api'
 import { SessionContext } from './session'
 import type { Session } from './types'
 import { Layout } from './components/Layout'
@@ -10,20 +11,39 @@ import { ClientsPage } from './pages/ClientsPage'
 import { NewClientPage } from './pages/NewClientPage'
 import { ClientDetailsPage } from './pages/ClientDetailsPage'
 import { UsersPage } from './pages/UsersPage'
+import { InvitationPage } from './pages/InvitationPage'
 import { ShieldIcon } from './components/Icons'
 
-type AuthState = { kind: 'loading' } | { kind: 'unauthenticated' } | { kind: 'ready'; session: Session } | { kind: 'error' }
+type AuthState =
+  | { kind: 'loading' }
+  | { kind: 'unauthenticated'; options: LoginOptions }
+  | { kind: 'ready'; session: Session }
+  | { kind: 'error' }
 
 export function App() {
+  if (window.location.pathname === '/invite') return <InvitationPage />
+  return <AuthenticationEntry />
+}
+
+function AuthenticationEntry() {
   const [auth, setAuth] = useState<AuthState>({ kind: 'loading' })
 
   useEffect(() => {
     let active = true
     loadSession()
       .then((session) => active && setAuth({ kind: 'ready', session }))
-      .catch((error: unknown) => {
+      .catch(async (error: unknown) => {
         if (!active) return
-        setAuth(error instanceof ApiError && error.status === 401 ? { kind: 'unauthenticated' } : { kind: 'error' })
+        if (!(error instanceof ApiError) || error.status !== 401) {
+          setAuth({ kind: 'error' })
+          return
+        }
+        try {
+          const options = await loadLoginOptions()
+          if (active) setAuth({ kind: 'unauthenticated', options })
+        } catch {
+          if (active) setAuth({ kind: 'error' })
+        }
       })
     return () => { active = false }
   }, [])
@@ -36,7 +56,25 @@ export function App() {
           <span className="auth-card__icon"><ShieldIcon /></span>
           <p className="eyebrow">Auth Control</p>
           <h1>Security starts with identity.</h1>
-          <p>Sign in with your verified Google account to continue to the authorization platform.</p>
+          <p>Sign in to continue to the authorization platform.</p>
+          {new URLSearchParams(window.location.search).has('loginError') && (
+            <div className="alert alert--error" role="alert">Invalid username or password.</div>
+          )}
+          {auth.options.passwordLoginEnabled && (
+            <form className="local-login" method="post" action="/login">
+              <input type="hidden" name={auth.options.csrf.parameterName} value={auth.options.csrf.token} />
+              <label>
+                <span>Username</span>
+                <input name="username" autoComplete="username" required />
+              </label>
+              <label>
+                <span>Password</span>
+                <input name="password" type="password" autoComplete="current-password" required />
+              </label>
+              <button className="button button--primary button--wide" type="submit">Sign in</button>
+            </form>
+          )}
+          {auth.options.passwordLoginEnabled && <div className="login-divider"><span>or</span></div>}
           <a className="button button--primary button--wide" href="/oauth2/authorization/google">Continue with Google</a>
         </div>
       </CenterState>

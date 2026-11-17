@@ -12,7 +12,6 @@ import jakarta.validation.Valid;
 import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,7 +56,7 @@ public class AdminClientController {
             + "secret only in this creation response.")
     public ClientCreation create(
             @Valid @RequestBody CreateClientRequest request,
-            @AuthenticationPrincipal OidcUser principal) {
+            @AuthenticationPrincipal Object principal) {
         return clients.create(request.toCommand(), currentUser.require(principal).id());
     }
 
@@ -66,7 +65,7 @@ public class AdminClientController {
     public ClientView update(
             @PathVariable String id,
             @Valid @RequestBody UpdateClientRequest request,
-            @AuthenticationPrincipal OidcUser principal) {
+            @AuthenticationPrincipal Object principal) {
         return clients.update(id, request.toCommand(), currentUser.require(principal).id());
     }
 
@@ -75,7 +74,7 @@ public class AdminClientController {
     public ClientView setEnabled(
             @PathVariable String id,
             @Valid @RequestBody EnabledRequest request,
-            @AuthenticationPrincipal OidcUser principal) {
+            @AuthenticationPrincipal Object principal) {
         return clients.setEnabled(id, request.enabled(), currentUser.require(principal).id());
     }
 

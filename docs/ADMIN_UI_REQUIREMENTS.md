@@ -12,7 +12,8 @@ module in this repository that calls the Spring Boot management API.
 
 The implemented backend contract uses `GET /api/session` for the authenticated current-user and
 CSRF response, `/api/admin/clients` for paginated client lifecycle management, and
-`/api/admin/users` for searchable user pages and audience-scoped role replacement. Client paths
+`/api/admin/users` for searchable user pages and audience-scoped role replacement, and
+`/api/admin/invitations` plus token-header `/api/invitations` endpoints for password-account setup. Client paths
 use the immutable internal registration ID. Confidential creation is the only response that may
 contain `clientSecret`.
 
@@ -39,7 +40,7 @@ Spring Boot auth-server
   |-- /api/admin/**       management API
   |-- /oauth2/**          OAuth endpoints
   |-- /.well-known/**     discovery
-  |-- /login/**           Google login callback
+  |-- /login/**           Google callback and local form login
   `-- PostgreSQL          protocol and administration state
 ```
 
@@ -85,10 +86,16 @@ Required routes:
 - `/clients/:id`: safe details, configuration updates, enable/disable controls, and later
   rotation entry points.
 - `/users`: paginated user search and audience-specific role management.
+- `/invite`: public one-time password-account setup for an administrator-issued token.
 
 Required UX behavior:
 
-- Unauthenticated users are sent through the auth server's Google login.
+- Unauthenticated users can choose Google login or, when password login is explicitly enabled,
+  the CSRF-protected username/password form. The development bootstrap remains local-profile only.
+- Administrators can create a one-time invitation link and optionally grant `AUTH_ADMIN` on
+  acceptance. The link is kept only in component memory and shown once.
+- Invitees choose their own username and 12+ character password on `/invite`; acceptance is
+  CSRF-protected and used, expired, revoked, or superseded tokens fail closed.
 - Authenticated non-admin users receive a clear forbidden screen and cannot load admin
   data.
 - Generated client secrets appear in a one-time confirmation view with copy and explicit
@@ -140,7 +147,6 @@ run lint, tests, and a production build.
 
 ## Out of scope for the first UI slice
 
-- Local username/password authentication.
 - Social providers other than Google.
 - Multi-tenant organization administration.
 - Direct database administration.

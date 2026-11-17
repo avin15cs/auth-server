@@ -1,8 +1,10 @@
 # Architecture
 
 The service is an OpenID Connect Provider and OAuth 2.0 Authorization Server. Google is
-an upstream identity provider used only to authenticate a person. Client applications
-never receive Google access or refresh tokens.
+an upstream identity provider used only to authenticate a person. Administrator-invited local
+credentials are available when password login is explicitly enabled, and a separate development
+bootstrap credential is available only under the `local` profile. Client applications never
+receive Google access or refresh tokens or a person's password.
 
 The repository is a monorepo with two application modules. `backend/` contains the Java/Spring
 authorization server and owns all protocol, persistence, management, and audit behavior.
@@ -23,7 +25,9 @@ Browser -> Client application -> Auth Server -> Google
 
 ## Trust boundaries
 
-- Google establishes the external identity using its immutable `sub` claim.
+- Google establishes an external identity using its immutable `sub` claim. Invited credentials
+  use a normalized username and a BCrypt password hash. The configured bootstrap credential is
+  disabled outside the local profile, while invited credentials require `PASSWORD_LOGIN_ENABLED`.
 - The auth server maps `(provider, provider_subject)` to its own immutable `uid`.
 - The auth server issues its own signed access, ID, and refresh tokens.
 - Each application has a distinct client ID, redirect URI allowlist, scopes, and secret.
@@ -48,7 +52,7 @@ identities and never receive human roles or a `uid`. The management boundary che
 persisted `AUTH_ADMIN` assignment on every request so role revocation does not wait for a
 browser session to expire.
 
-`GET /api/session` is available to authenticated Google-backed users and returns safe current
+`GET /api/session` is available to authenticated users from either provider and returns safe current
 user fields, the current persisted administrator decision, and the CSRF header name and token.
 All `/api/admin/**` data and mutations require the persisted `AUTH_ADMIN` assignment. Client
 management is exposed under `/api/admin/clients`; user search and audience-scoped role
@@ -58,7 +62,7 @@ Springdoc generates an OpenAPI description for `/api/**` only. Swagger UI at
 `/swagger-ui.html` and its `/v3/api-docs` source require the same persisted `AUTH_ADMIN`
 decision; OAuth/OIDC protocol endpoints, actuator endpoints, and internal implementation
 details are excluded from the generated management contract. Swagger does not create a second
-authentication path: it uses the existing same-origin Google session, and mutations still
+authentication path: it uses the existing same-origin authenticated session, and mutations still
 require the CSRF header and token returned by `GET /api/session`.
 
 Spring Authorization Server's registered-client rows contain protocol configuration and hashed
@@ -80,12 +84,21 @@ discovery, management API, and actuator paths are never handled by the SPA fallb
 See `ADMIN_UI_REQUIREMENTS.md` for its API and screen contract.
 
 ```text
-Google <-- login --> Auth Server <-- same-origin session --> Auth Admin UI
-                         |
-                         +--> PostgreSQL
-                         |
-Client applications <---+-- OAuth/OIDC tokens
+Google -----------+
+                   +--> Auth Server <-- same-origin session --> Auth Admin UI
+Local credentials-+         |
+                             +--> PostgreSQL
+                             |
+Client applications <-------+-- OAuth/OIDC tokens
 ```
+
+`auth_local_credential` stores only the local username, password hash, enabled state, and
+internal user reference. `auth_user_invitation` stores invitation metadata and only a SHA-256
+token hash; the random setup token is returned once and never persisted in plaintext. Invitation
+acceptance atomically creates the internal user and BCrypt credential, consumes the expiring
+token, optionally grants `AUTH_ADMIN`, and records audit events. Reissuing for an email revokes
+its earlier pending invitation. Both login providers resolve to immutable internal `uid` values
+before authorization and token customization.
 
 ## Supported flows
 

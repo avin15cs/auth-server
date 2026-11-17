@@ -3,6 +3,7 @@ package io.github.avin15cs.authserver.admin;
 import io.github.avin15cs.authserver.user.AuthUser;
 import io.github.avin15cs.authserver.user.AuthUserRepository;
 import io.github.avin15cs.authserver.user.AuthUserRoleRepository;
+import io.github.avin15cs.authserver.security.CurrentUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,7 +17,6 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -38,10 +38,15 @@ public class AdminUserController {
     private static final int MAX_PAGE_SIZE = 100;
     private final AuthUserRepository users;
     private final AuthUserRoleRepository roles;
+    private final CurrentUserService currentUser;
 
-    public AdminUserController(AuthUserRepository users, AuthUserRoleRepository roles) {
+    public AdminUserController(
+            AuthUserRepository users,
+            AuthUserRoleRepository roles,
+            CurrentUserService currentUser) {
         this.users = users;
         this.roles = roles;
+        this.currentUser = currentUser;
     }
 
     @GetMapping
@@ -65,8 +70,8 @@ public class AdminUserController {
             @PathVariable UUID userId,
             @PathVariable @Pattern(regexp = "[A-Za-z0-9._:-]{1,200}") String audience,
             @Valid @RequestBody ReplaceRolesRequest request,
-            @AuthenticationPrincipal OidcUser principal) {
-        AuthUser actor = currentUser(principal);
+            @AuthenticationPrincipal Object principal) {
+        AuthUser actor = currentUser.require(principal);
         AuthUser target = users.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         if (actor.id().equals(target.id())
@@ -76,14 +81,6 @@ public class AdminUserController {
                     HttpStatus.CONFLICT, "Administrators cannot remove their own AUTH_ADMIN role");
         }
         roles.replaceRoles(target.id(), audience, request.roles(), actor.id());
-    }
-
-    private AuthUser currentUser(OidcUser principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-        }
-        return users.findByProviderSubject("google", principal.getSubject())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 
     private UserView toView(AuthUser user) {

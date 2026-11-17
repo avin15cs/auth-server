@@ -1,12 +1,12 @@
 # Auth Server
 
 Standalone OAuth 2.0 Authorization Server and OpenID Connect Provider for
-`avin15cs` applications. Customers authenticate with Google; applications trust tokens
-issued by this service.
+`avin15cs` applications. People authenticate with Google or an administrator-invited
+username/password account; applications trust tokens issued by this service.
 
 ## Security model
 
-- Google login only; no local passwords.
+- Google login plus explicitly enabled, administrator-invited password accounts.
 - Authorization Code flow with mandatory PKCE.
 - Short-lived JWT access tokens and rotated refresh tokens.
 - Scoped Client Credentials tokens for confidential machine clients.
@@ -56,7 +56,16 @@ service.
 
 Persisted `AUTH_ADMIN` users can open the management API documentation at
 `/swagger-ui.html`. The OpenAPI JSON is available at `/v3/api-docs`; both endpoints require
-the same Google-authenticated administrator session as the management API.
+the same authenticated administrator session as the management API.
+
+The local profile can additionally bootstrap a development-only username/password
+administrator when `LOCAL_LOGIN_ENABLED=true`. Local credentials are BCrypt-hashed in
+PostgreSQL and rejected unless the `local` profile is active; Google login remains available.
+
+Production password login is a separate capability. Set `PASSWORD_LOGIN_ENABLED=true`, sign in
+with an existing Google-bootstrap `AUTH_ADMIN`, and create a one-time setup link on the Users
+screen. The recipient chooses their username and password; only hashes of the invitation token
+and password are stored. Never configure `LOCAL_ADMIN_PASSWORD` in production.
 
 To run only the administration UI, use `npm ci` and `npm run dev` from `admin-ui/`; Vite proxies
 same-origin service paths to port 9000. The production Docker image builds and serves the UI

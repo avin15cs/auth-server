@@ -38,3 +38,11 @@ admin frontend acceptance criteria are maintained in `ADMIN_UI_REQUIREMENTS.md`.
 - [x] `AUTH-009` Shared local PostgreSQL bootstrap -- allow Auth Server and URL Shortener
   to start or reuse one `postgres-db` container while retaining service-owned databases,
   credentials, and Liquibase histories.
+- [x] `AUTH-010` Development local administrator login -- provide a CSRF-protected local
+  login alongside Google, hash credentials in PostgreSQL, retain saved OAuth requests, and
+  reject local authentication outside the explicitly enabled `local` profile.
+- [x] `AUTH-011` Production user invitations -- allow `AUTH_ADMIN` users to issue expiring,
+  one-time account setup links, store token and password hashes only, optionally grant the
+  invited administrator role, and audit the complete invitation lifecycle.
+- [ ] `AUTH-012` Password-account recovery and controls -- add password reset, credential
+  disablement, session invalidation, login throttling, and administrator unlock operations.

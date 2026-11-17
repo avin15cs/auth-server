@@ -56,4 +56,28 @@ describe('management flows', () => {
     expect(await screen.findByText(/service could not complete the request/i)).toBeInTheDocument()
     expect(screen.queryByText(/secret=bad/i)).not.toBeInTheDocument()
   })
+
+  it('creates an invitation and shows its setup link once', async () => {
+    const user = userEvent.setup()
+    const userPage = { content: [], total: 0, limit: 20, offset: 0 }
+    const creation = {
+      invitation: { id: 'invite-1', email: 'new@example.com', grantAuthAdmin: true, expiresAt: '2026-01-02T00:00:00Z', createdAt: '2026-01-01T00:00:00Z', status: 'PENDING' },
+      setupUrl: 'https://auth.example.com/invite#token=one-time-token',
+    }
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(userPage))
+      .mockResolvedValueOnce(jsonResponse(creation, 201))
+    vi.stubGlobal('fetch', fetchMock)
+    renderAdmin(<UsersPage />)
+
+    await user.type(screen.getByLabelText(/email address/i), 'new@example.com')
+    await user.click(screen.getByRole('checkbox', { name: /grant auth_admin/i }))
+    await user.click(screen.getByRole('button', { name: /create invitation/i }))
+
+    expect(await screen.findByTestId('one-time-invitation')).toHaveTextContent(creation.setupUrl)
+    expect(fetchMock.mock.calls[1][0]).toBe('/api/admin/invitations')
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1]?.body))).toEqual({
+      email: 'new@example.com', grantAuthAdmin: true,
+    })
+  })
 })

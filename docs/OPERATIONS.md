@@ -13,6 +13,29 @@ Supply secrets through the deployment platform's secret manager. Do not put them
 environment files in source control, container images, logs, or CI variables visible to
 forked pull requests.
 
+The configured local bootstrap account is a development aid only. Production must leave
+`LOCAL_LOGIN_ENABLED=false` and must not provide `LOCAL_ADMIN_PASSWORD`. Production password
+accounts instead require `PASSWORD_LOGIN_ENABLED=true` and must be created through audited
+administrator invitations.
+
+## Password-account bootstrap and invitations
+
+Use a verified Google account in `AUTH_ADMIN_EMAILS` to establish the first production
+administrator. That administrator creates an invitation on the Users screen and transfers the
+one-time HTTPS setup link to the intended recipient through an approved channel. The recipient
+chooses their own username and password; administrators never handle the plaintext password.
+
+Invitation tokens use 256 bits of randomness, are stored only as SHA-256 hashes, default to a
+24-hour lifetime, and become unusable after acceptance, revocation, expiry, or reissue for the
+same email. Passwords require at least 12 characters and are stored with the application's
+delegating BCrypt encoder. Keep `AUTH_INVITATION_TTL` at or below seven days. Audit events cover
+creation, acceptance, revocation, and invited administrator grants.
+
+Before exposing password login publicly, enforce login and invitation endpoint rate limits at
+the ingress. Password reset and administrator credential disablement are not part of this
+invitation milestone; retain a tested Google break-glass administrator until those operations
+are delivered.
+
 ## Google configuration
 
 Create a Web application OAuth client and register this exact callback:

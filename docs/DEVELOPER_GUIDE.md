@@ -45,6 +45,18 @@ Use the committed Maven wrapper instead of relying on a machine-specific Maven v
 The local issuer is `http://localhost:9000`. Discovery is available at
 `http://localhost:9000/.well-known/openid-configuration`.
 
+For a development-only local administrator, set these values in the ignored `.env` file:
+
+```dotenv
+LOCAL_LOGIN_ENABLED=true
+LOCAL_ADMIN_USERNAME=admin
+LOCAL_ADMIN_PASSWORD=choose-a-local-password
+```
+
+The local profile seeds or refreshes that account's BCrypt hash and persisted `AUTH_ADMIN`
+role at startup. Local form login is rejected when either the flag is false or the active
+profile is not `local`. Never carry these development credentials into production.
+
 ## Unified local development
 
 After `.env` contains the required local configuration, install the locked administration UI
@@ -85,6 +97,10 @@ documents only `/api/**` management and session endpoints. For a mutation, first
 | `DATABASE_PASSWORD` | PostgreSQL password | Yes |
 | `DATABASE_POOL_SIZE` | Maximum JDBC pool size | No |
 | `AUTH_ISSUER` | Externally visible, exact issuer URL | No |
+| `AUTH_UI_ORIGIN` | Post-login browser destination for the administration UI | No |
+| `LOCAL_LOGIN_ENABLED` | Enables development-only local credential login under the `local` profile | No |
+| `LOCAL_ADMIN_USERNAME` | Development-only local administrator username | No |
+| `LOCAL_ADMIN_PASSWORD` | Development-only local administrator password, stored as a hash | Yes |
 | `AUTH_JWK_SET` | Private signing JWK Set | Yes |
 | `ACCESS_TOKEN_TTL` | Access-token lifetime | No |
 | `REFRESH_TOKEN_TTL` | Refresh-token lifetime | No |
@@ -119,10 +135,13 @@ and management mutations rather than mocking away protocol behavior.
 
 ## Management API development
 
-The browser first calls `GET /api/session` after Google login. Its response contains the safe
+The browser first calls `GET /api/session` after Google or local login. Its response contains the safe
 current-user view, the current persisted `admin` decision, and `csrf.headerName` plus
 `csrf.token`. Send that header on every `POST`, `PUT`, or other mutating management request.
 Do not disable CSRF for local frontend development.
+
+Before authentication, `GET /api/login-options` returns whether local login is available and
+the CSRF form parameter required by `POST /login`. It does not disclose configured usernames.
 
 Client endpoints are:
 

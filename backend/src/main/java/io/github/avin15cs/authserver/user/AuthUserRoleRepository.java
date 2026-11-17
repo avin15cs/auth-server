@@ -70,6 +70,20 @@ public class AuthUserRoleRepository {
     }
 
     @Transactional
+    public boolean grantLocalBootstrapAdministrator(AuthUser user) {
+        int inserted = jdbc.update("""
+                INSERT INTO auth_user_role (user_id, audience, role, assignment_source)
+                VALUES (?, ?, ?, 'local-bootstrap')
+                ON CONFLICT (user_id, audience, role) DO NOTHING
+                """, user.id(), AUTH_SERVER_AUDIENCE, AUTH_ADMIN_ROLE);
+        if (inserted == 1) {
+            insertAuditEvent(null, "LOCAL_BOOTSTRAP_ADMIN_GRANTED", "AUTH_USER", user.id().toString(),
+                    "audience=auth-server,role=AUTH_ADMIN");
+        }
+        return inserted == 1;
+    }
+
+    @Transactional
     public void replaceRoles(UUID targetUserId, String audience, Set<String> roles, UUID actorUserId) {
         jdbc.update("DELETE FROM auth_user_role WHERE user_id = ? AND audience = ?", targetUserId, audience);
         roles.forEach(role -> jdbc.update("""

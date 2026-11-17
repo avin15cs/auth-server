@@ -3,12 +3,15 @@ package io.github.avin15cs.authserver;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import tools.jackson.databind.JsonNode;
@@ -39,6 +42,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -47,6 +52,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Testcontainers
+@ActiveProfiles("local")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AuthServerApplicationIntegrationTest {
 
@@ -66,6 +72,9 @@ class AuthServerApplicationIntegrationTest {
         registry.add("spring.security.oauth2.client.registration.google.client-id", () -> "test-google-client");
         registry.add("spring.security.oauth2.client.registration.google.client-secret", () -> "test-google-secret");
         registry.add("auth.jwk-set", () -> JWK_SET);
+        registry.add("auth.local-login.enabled", () -> "true");
+        registry.add("auth.local-login.username", () -> "admin");
+        registry.add("auth.local-login.password", () -> "integration-test-local-password");
         registry.add("auth.clients[0].id", () -> "url-shortener");
         registry.add("auth.clients[0].name", () -> "URL Shortener");
         registry.add("auth.clients[0].secret", () -> "test-client-secret-with-sufficient-entropy");
@@ -128,13 +137,55 @@ class AuthServerApplicationIntegrationTest {
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'auth_user_role'",
                 Integer.class);
 
-        assertThat(appliedChangesets).isEqualTo(4);
+        assertThat(appliedChangesets).isEqualTo(5);
         assertThat(usersTable).isOne();
         assertThat(clients).isEqualTo(2);
         assertThat(roleTables).isOne();
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM auth_client_metadata WHERE source = 'BOOTSTRAP'", Integer.class))
                 .isEqualTo(2);
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM auth_local_credential WHERE username = 'admin'", Integer.class))
+                .isOne();
+        String localPasswordHash = jdbc.queryForObject(
+                "SELECT password_hash FROM auth_local_credential WHERE username = 'admin'", String.class);
+        assertThat(localPasswordHash).isNotEqualTo("integration-test-local-password").startsWith("{bcrypt}");
+    }
+
+    @Test
+    void localAdministratorCanAuthenticateAndUseThePersistedSession() throws Exception {
+        mockMvc.perform(get("/api/login-options"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.localLoginEnabled").value(true))
+                .andExpect(jsonPath("$.csrf.parameterName").value("_csrf"))
+                .andExpect(jsonPath("$.csrf.token").isNotEmpty());
+
+        var login = mockMvc.perform(formLogin().user("admin").password("integration-test-local-password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost:5173/"))
+                .andReturn();
+
+        MockHttpSession session = (MockHttpSession) login.getRequest().getSession(false);
+        mockMvc.perform(get("/api/session").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.displayName").value("Local Administrator"))
+                .andExpect(jsonPath("$.admin").value(true));
+
+        mockMvc.perform(get("/oauth2/authorize")
+                        .session(session)
+                        .queryParam("response_type", "code")
+                        .queryParam("client_id", "url-shortener")
+                        .queryParam("redirect_uri", "http://localhost/callback")
+                        .queryParam("scope", "openid")
+                        .queryParam("state", "local-login-state")
+                        .queryParam("code_challenge", "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG")
+                        .queryParam("code_challenge_method", "S256"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("http://localhost/callback?code=*&state=local-login-state"));
+
+        mockMvc.perform(formLogin().user("admin").password("wrong-password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("http://localhost:5173/?loginError=true"));
     }
 
     @Test

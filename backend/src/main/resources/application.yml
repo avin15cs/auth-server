@@ -44,11 +44,16 @@ spring:
             scope: [openid, profile, email]
 auth:
   issuer: ${AUTH_ISSUER:http://localhost:9000}
+  ui-origin: ${AUTH_UI_ORIGIN:http://localhost:5173/}
   jwk-set: ${AUTH_JWK_SET:}
   access-token-ttl: ${ACCESS_TOKEN_TTL:10m}
   refresh-token-ttl: ${REFRESH_TOKEN_TTL:8h}
   admin:
     bootstrap-emails: ${AUTH_ADMIN_EMAILS:}
+  local-login:
+    enabled: ${LOCAL_LOGIN_ENABLED:false}
+    username: ${LOCAL_ADMIN_USERNAME:}
+    password: ${LOCAL_ADMIN_PASSWORD:}
   clients:
     - id: ${URL_SHORTENER_CLIENT_ID:url-shortener}
       enabled: true

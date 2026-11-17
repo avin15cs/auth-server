@@ -1,5 +1,14 @@
 import type { Session } from './types'
 
+export interface LoginOptions {
+  localLoginEnabled: boolean
+  csrf: {
+    parameterName: string
+    headerName: string
+    token: string
+  }
+}
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -31,6 +40,15 @@ export async function loadSession(): Promise<Session> {
   })
   if (!response.ok) throw new ApiError(await safeMessage(response), response.status)
   return response.json() as Promise<Session>
+}
+
+export async function loadLoginOptions(): Promise<LoginOptions> {
+  const response = await fetch('/api/login-options', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) throw new ApiError(await safeMessage(response), response.status)
+  return response.json() as Promise<LoginOptions>
 }
 
 export class AdminApi {

@@ -46,6 +46,28 @@ public class AuthUserRepository {
                 .orElseThrow(() -> new IllegalStateException("User was not persisted"));
     }
 
+    @Transactional
+    public AuthUser upsertLocalUser(String username, String displayName) {
+        String normalizedUsername = username.trim().toLowerCase(java.util.Locale.ROOT);
+        UUID id = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO auth_user (
+                    id, provider, provider_subject, email, email_verified,
+                    display_name, picture_url, created_at, last_login_at
+                ) VALUES (?, 'local', ?, NULL, false, ?, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ON CONFLICT (provider, provider_subject) DO UPDATE SET
+                    display_name = EXCLUDED.display_name,
+                    last_login_at = CURRENT_TIMESTAMP
+                """, id, normalizedUsername, displayName);
+
+        return findByProviderSubject("local", normalizedUsername)
+                .orElseThrow(() -> new IllegalStateException("Local user was not persisted"));
+    }
+
+    public void recordLogin(UUID userId) {
+        jdbc.update("UPDATE auth_user SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?", userId);
+    }
+
     public Optional<AuthUser> findByProviderSubject(String provider, String subject) {
         return jdbc.query("""
                 SELECT id, provider, provider_subject, email, email_verified,

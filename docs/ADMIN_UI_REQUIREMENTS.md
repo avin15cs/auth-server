@@ -39,7 +39,7 @@ Spring Boot auth-server
   |-- /api/admin/**       management API
   |-- /oauth2/**          OAuth endpoints
   |-- /.well-known/**     discovery
-  |-- /login/**           Google login callback
+  |-- /login/**           Google callback and local form login
   `-- PostgreSQL          protocol and administration state
 ```
 
@@ -88,7 +88,8 @@ Required routes:
 
 Required UX behavior:
 
-- Unauthenticated users are sent through the auth server's Google login.
+- Unauthenticated users can choose Google login or, when explicitly enabled under the local
+  profile, the CSRF-protected local username/password form.
 - Authenticated non-admin users receive a clear forbidden screen and cannot load admin
   data.
 - Generated client secrets appear in a one-time confirmation view with copy and explicit
@@ -140,7 +141,6 @@ run lint, tests, and a production build.
 
 ## Out of scope for the first UI slice
 
-- Local username/password authentication.
 - Social providers other than Google.
 - Multi-tenant organization administration.
 - Direct database administration.

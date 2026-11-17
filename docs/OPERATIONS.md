@@ -13,6 +13,10 @@ Supply secrets through the deployment platform's secret manager. Do not put them
 environment files in source control, container images, logs, or CI variables visible to
 forked pull requests.
 
+Local username/password login is a development aid only. Production must leave
+`LOCAL_LOGIN_ENABLED=false` and must not provide `LOCAL_ADMIN_PASSWORD`. Authentication rejects
+stored local credentials unless the `local` Spring profile is active.
+
 ## Google configuration
 
 Create a Web application OAuth client and register this exact callback:

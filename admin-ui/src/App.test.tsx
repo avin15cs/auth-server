@@ -7,11 +7,18 @@ import { jsonResponse } from './test/render'
 
 describe('authentication states', () => {
   it('shows the Google login path for an unauthenticated browser', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ title: 'Unauthorized' }, 401)))
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ title: 'Unauthorized' }, 401))
+      .mockResolvedValueOnce(jsonResponse({
+        localLoginEnabled: true,
+        csrf: { parameterName: '_csrf', headerName: 'X-CSRF-TOKEN', token: 'csrf-token' },
+      })))
     render(<MemoryRouter><App /></MemoryRouter>)
 
     const link = await screen.findByRole('link', { name: /continue with google/i })
     expect(link).toHaveAttribute('href', '/oauth2/authorization/google')
+    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument()
+    expect(screen.getByLabelText(/username/i)).toHaveAttribute('name', 'username')
   })
 
   it('shows forbidden without requesting management data for a non-admin', async () => {

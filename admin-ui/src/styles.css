@@ -226,6 +226,11 @@ td code { color: #b8cee3; }
 .auth-card__icon--warning { color: #ffd3d7; background: rgba(255,126,137,.13); font-size: 1.3rem; font-weight: 900; }
 .auth-card h1 { margin: 0; font-size: 1.8rem; letter-spacing: -.035em; }
 .auth-card > p:not(.eyebrow) { margin: .9rem 0 1.6rem; color: var(--muted); font-size: .78rem; line-height: 1.65; }
+.local-login { display: grid; gap: .85rem; margin-bottom: 1rem; text-align: left; }
+.local-login label { display: grid; gap: .4rem; }
+.local-login label span { color: var(--muted); font-size: .68rem; font-weight: 750; }
+.login-divider { display: flex; align-items: center; gap: .75rem; margin: 1rem 0; color: var(--muted); font-size: .68rem; text-transform: uppercase; }
+.login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
 @media (max-width: 900px) {
   .app-shell { grid-template-columns: 1fr; }
